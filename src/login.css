@@ -1,0 +1,142 @@
+/* Login Page Container */
+.login-container {
+    margin-top: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+}
+
+/* Login Box */
+.login-box {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    max-width: 450px;
+    width: 100%;
+    text-align: center;
+}
+
+/* Heading */
+.login-box h1 {
+    font-size: 32px;
+    font-weight: bold;
+    color: #222;
+    margin-bottom: 20px;
+}
+
+/* Form Controls */
+.form-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.form-control {
+    padding: 14px;
+    font-size: 18px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    width: 100%;
+}
+
+/* Focus Effect */
+.form-control:focus {
+    border-color: #c4a114;
+    box-shadow: #c4a114;
+}
+
+/* Error Message */
+.alert-danger {
+    font-size: 16px;
+    font-weight: bold;
+    background-color: rgba(255, 0, 0, 0.1);
+    color: red;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+/* Buttons */
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.btn-secondary, .btn-primary {
+    padding: 12px 25px;
+    font-size: 18px;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    border-radius: 5px;
+    flex-grow: 1;
+}
+
+/* Secondary Button */
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    transform: scale(1.05);
+}
+
+/* Primary Button */
+.btn-primary {
+    background-color: #E2C116;
+    border-color: #3f51b5;
+}
+
+.btn-primary:hover {
+    background-color:#c4a114;
+    transform: scale(1.05);
+}
+
+/* Forgot Password Link */
+.forgot-password {
+    margin-top: 15px;
+    text-align: right;
+}
+
+.forgot-password a {
+    color: #3f51b5;
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.3s ease-in-out;
+}
+
+.forgot-password a:hover {
+    color: #2b3b8f;
+    text-decoration: underline;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .login-container {
+        padding: 20px;
+    }
+
+    .login-box {
+        max-width: 100%;
+        padding: 30px;
+    }
+
+    .form-control {
+        font-size: 16px;
+        padding: 12px;
+    }
+
+    .btn {
+        font-size: 16px;
+    }
+
+    .button-group {
+        flex-direction: column;
+    }
+}
