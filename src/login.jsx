@@ -64,12 +64,12 @@ export default function Login() {
                     )}
 
                     <div className="button-group">
-                        <button type="submit" className="btn btn-secondary">Login</button>
-                        <Link to="/register" className="btn btn-primary">Register</Link>
+                        <Link to ="/ClaimerPage" type="submit" className="btn btn-secondary">Login</Link>
+                        <Link to="/" className="btn btn-primary">Register</Link>
                     </div>
 
                     <div className="forgot-password">
-                        <Link to="/forgotPassword">Forgot Password?</Link>
+                        <Link to="/">Forgot Password?</Link>
                     </div>
                 </form>
             </div>
