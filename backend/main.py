@@ -8,13 +8,19 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+# Define allowed origins for security
+origins = [
+    "http://localhost:3000",  # React Dev Server
+    "https://yourfrontend.com"  # Add production frontend URL
+]
+
 # Add CORS middleware configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],         # Allow requests from any origin; adjust in production
+    allow_origins=origins,  
     allow_credentials=True,
-    allow_methods=["*"],         # Allow all HTTP methods (GET, POST, etc.)
-    allow_headers=["*"],         # Allow all headers
+    allow_methods=["*"],  
+    allow_headers=["*"],  
 )
 
 # Root Endpoint (Welcome Message)
@@ -62,7 +68,8 @@ def verify_login(userID: str, userPassword: str, db: Session = Depends(get_db)):
             return {"message": "Invalid credentials"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
+    finally:
+        db.close()
 
 # Automatically open Swagger UI when the server starts
 def open_browser():

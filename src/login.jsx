@@ -1,27 +1,38 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "./login.css"; 
+import axios from "axios";
+import "./login.css";
 
 export default function Login() {
-    const [email, setEmail] = useState("");
+    const [userID, setUserID] = useState(""); // Updated to match backend param
     const [password, setPassword] = useState("");
     const [loginError, setLoginError] = useState("");
 
     const navigate = useNavigate();
 
-    const onFormSubmit = (event) => {
+    const onFormSubmit = async (event) => {
         event.preventDefault();
+        setLoginError(""); // Clear previous errors
 
-        if (!email || !password) {
-            setLoginError("Email and password are required.");
+        if (!userID || !password) {
+            setLoginError("User ID and password are required.");
             return;
         }
 
-        // Simulating authentication (replace with API call)
-        if (email === "user@example.com" && password === "password") {
-            navigate("/dashboard"); // Redirect on success
-        } else {
-            setLoginError("Invalid email or password");
+        try {
+            const response = await axios.post(
+                "http://127.0.0.1:8000/users/login", 
+                null, // No body needed, just query params
+                { params: { userID, userPassword: password } }
+            );
+
+            if (response.data.message === "Login successful") {
+                navigate("/ClaimerPage"); // Redirect on success
+            } else {
+                setLoginError("Invalid credentials.");
+            }
+        } catch (error) {
+            setLoginError(error.response?.data?.detail || "Login failed.");
         }
     };
 
@@ -32,14 +43,14 @@ export default function Login() {
 
                 <form onSubmit={onFormSubmit}>
                     <div className="form-group">
-                        <label htmlFor="email" className="form-label">Email</label>
+                        <label htmlFor="userID" className="form-label">User ID</label>
                         <input
-                            type="email"
+                            type="text"
                             className="form-control"
-                            id="email"
-                            name="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            id="userID"
+                            name="userID"
+                            value={userID}
+                            onChange={(e) => setUserID(e.target.value)}
                             required
                         />
                     </div>
@@ -64,7 +75,7 @@ export default function Login() {
                     )}
 
                     <div className="button-group">
-                        <Link to ="/ClaimerPage" type="submit" className="btn btn-secondary">Login</Link>
+                        <button type="submit" className="btn btn-secondary">Login</button>
                         <Link to="/" className="btn btn-primary">Register</Link>
                     </div>
 
