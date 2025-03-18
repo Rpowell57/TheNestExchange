@@ -13,19 +13,19 @@ export default function Login() {
     const onFormSubmit = async (event) => {
         event.preventDefault();
         setLoginError(""); // Clear previous errors
-
+    
         if (!userID || !password) {
             setLoginError("User ID and password are required.");
             return;
         }
-
+    
         try {
             const response = await axios.post(
-                "http://127.0.0.1:8000/users/login", 
-                null, // No body needed, just query params
-                { params: { userID, userPassword: password } }
+                "http://127.0.0.1:8000/users/login",
+                { userID, userPassword: password }, // Send as JSON body
+                { headers: { "Content-Type": "application/json" } } 
             );
-
+    
             if (response.data.message === "Login successful") {
                 navigate("/ClaimerPage"); // Redirect on success
             } else {
@@ -35,6 +35,7 @@ export default function Login() {
             setLoginError(error.response?.data?.detail || "Login failed.");
         }
     };
+    
 
     return (
         <div className="container login-container">
