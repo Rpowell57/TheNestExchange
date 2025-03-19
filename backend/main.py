@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 from database import get_db
 from fastapi.middleware.cors import CORSMiddleware
-
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -30,27 +30,27 @@ def read_root():
     return {"message": "Welcome to The Nest Exchange API!"}
 
 # User Creation Endpoint
+class UserCreate(BaseModel):
+    userID: str
+    userEmail: str
+    userPassword: str
+    userIsAdmin: int
+    userFirstName: str
+    userLastName: str
+    userIsStudent: int
+
 @app.post("/users/create")
-def create_user(
-    userID: str, 
-    userEmail: str, 
-    userPassword: str, 
-    userIsAdmin: int, 
-    userFirstName: str, 
-    userLastName: str, 
-    userIsStudent: int, 
-    db: Session = Depends(get_db)
-):
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
     try:
         query = text("EXEC newUser :userID, :userEmail, :userPassword, :userIsAdmin, :userFirstName, :userLastName, :userIsStudent")
         db.execute(query, {
-            "userID": userID,
-            "userEmail": userEmail,
-            "userPassword": userPassword,
-            "userIsAdmin": userIsAdmin,
-            "userFirstName": userFirstName,
-            "userLastName": userLastName,
-            "userIsStudent": userIsStudent
+            "userID": user.userID,
+            "userEmail": user.userEmail,
+            "userPassword": user.userPassword,
+            "userIsAdmin": user.userIsAdmin,
+            "userFirstName": user.userFirstName,
+            "userLastName": user.userLastName,
+            "userIsStudent": user.userIsStudent
         })
         db.commit()
         return {"message": "User created successfully"}

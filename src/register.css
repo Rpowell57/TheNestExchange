@@ -1,0 +1,105 @@
+/* Register Page Container */
+.register-container {
+    margin-top: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+}
+
+/* Register Box */
+.register-box {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    max-width: 450px;
+    width: 100%;
+    text-align: center;
+}
+
+/* Heading */
+.register-box h1 {
+    font-size: 32px;
+    font-weight: bold;
+    color: #222;
+    margin-bottom: 20px;
+}
+
+/* Form Controls */
+.form-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.form-control {
+    padding: 14px;
+    font-size: 18px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    width: 100%;
+}
+
+/* Focus Effect */
+.form-control:focus {
+    border-color: #c4a114;
+    box-shadow: #c4a114;
+}
+
+/* Error and Success Messages */
+.alert {
+    font-size: 16px;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 5px;
+}
+.alert-danger {
+    background-color: rgba(255, 0, 0, 0.1);
+    color: red;
+}
+.alert-success {
+    background-color: rgba(0, 255, 0, 0.1);
+    color: green;
+}
+
+/* Buttons */
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.btn-primary {
+    background-color: #E2C116;
+    border-color: #3f51b5;
+}
+
+.btn-primary:hover {
+    background-color: #c4a114;
+    transform: scale(1.05);
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    transform: scale(1.05);
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .register-container {
+        padding: 20px;
+    }
+
+    .register-box {
+        max-width: 100%;
+        padding: 30px;
+    }
+}
