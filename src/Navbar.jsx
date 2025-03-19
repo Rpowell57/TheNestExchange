@@ -1,7 +1,25 @@
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import ksuLogo from "./assets/ksulogo.png";
 
 export default function NavBar() {
+    const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("userID")); // ✅ Initial state check
+
+    useEffect(() => {
+        const checkAuth = () => {
+            setIsAuthenticated(!!localStorage.getItem("userID")); 
+        };
+        window.addEventListener("storage", checkAuth); 
+        return () => {
+            window.removeEventListener("storage", checkAuth);
+        };
+    }, []);
+
+
+    const handleLogout = () => {
+        localStorage.removeItem("userID"); 
+        setIsAuthenticated(false);
+    };
     return (
         <nav className="navbar">
             <div className="container">
@@ -17,18 +35,28 @@ export default function NavBar() {
                         <li className="nav-item">
                             <Link className="nav-link" to="/HomePage">Home Page</Link>
                         </li>
-                        <li className="nav-item">
-                            <Link className="nav-link" to="/ListerPage">Lister</Link>
-                        </li>
-                        <li className="nav-item">
-                            <Link className="nav-link" to="/ClaimerPage">Claimer</Link>
-                        </li>
+                        {isAuthenticated && ( 
+                            <>
+                                <li className="nav-item">
+                                    <Link className="nav-link" to="/ListerPage">Lister</Link>
+                                </li>
+                                <li className="nav-item">
+                                    <Link className="nav-link" to="/ClaimerPage">Claimer</Link>
+                                </li>
+                            </>
+                        )}
                     </ul>
 
                     <div className="navbar-right">
-                    <Link to="/login" className="nav-btn" style={{ backgroundColor: "#E2C116", borderColor: "#000000" }}>
-                        Login/Register
-                    </Link>
+                        {isAuthenticated ? (
+                            <button className="nav-btn" onClick={handleLogout} style={{ backgroundColor: "#E2C116", borderColor: "#000000" }}>
+                                Logout
+                            </button>
+                        ) : (
+                            <Link to="/login" className="nav-btn" style={{ backgroundColor: "#E2C116", borderColor: "#000000" }}>
+                                Login/Register
+                            </Link>
+                        )}
                     </div>
                 </div>
             </div>

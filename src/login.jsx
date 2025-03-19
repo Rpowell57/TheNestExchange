@@ -27,6 +27,8 @@ export default function Login() {
             );
     
             if (response.data.message === "Login successful") {
+                localStorage.setItem("userID", userID);
+                window.dispatchEvent(new Event("storage"));
                 navigate("/ClaimerPage"); // Redirect on success
             } else {
                 setLoginError("Invalid credentials.");
@@ -77,7 +79,7 @@ export default function Login() {
 
                     <div className="button-group">
                         <button type="submit" className="btn btn-secondary">Login</button>
-                        <Link to="/" className="btn btn-primary">Register</Link>
+                        <Link to="/register" className="btn btn-primary">Register</Link>
                     </div>
 
                     <div className="forgot-password">
