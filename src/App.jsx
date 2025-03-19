@@ -5,7 +5,7 @@ import ListerPage from './ListerPage';
 import ClaimerPage from './ClaimerPage';
 import Login from './login';
 import HomePage from './HomePage';
-
+import Register from './register';
 function App() {
   return (
       <div className="App">
@@ -18,6 +18,7 @@ function App() {
                 <Route path="/ListerPage" element={<ListerPage />} />
                 <Route path="/ClaimerPage" element={<ClaimerPage />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
               </Routes>
           </BrowserRouter>
       </div>
