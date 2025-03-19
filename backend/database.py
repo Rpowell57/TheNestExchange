@@ -100,9 +100,22 @@ def newUser(userID, userEmail, userPassword, userIsAdmin, userFirstName, userLas
     except Exception as e:
         print(f"Error inserting new user: {e}")
 
+def newListing(aListUser, alistname, listCategory, alistdescription, aListClaimDescription, aIsClaimed, aListPicture, alistPicture2):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "EXEC newListing ?, ?, ?, ?, ?, ?, ?, ?",
+                (aListUser, alistname, listCategory, alistdescription, aListClaimDescription, aIsClaimed, aListPicture, alistPicture2)
+            )
+            conn.commit()
+            print("New listing created successfully!")
+    except Exception as e:
+        print(f"Error inserting new listing: {e}")
+
 # Run functions for testing
 if __name__ == '__main__':
-    choice = input("Choose function to run (read, login, newUser): ").strip().lower()
+    choice = input("Choose function to run (read, login, newUser, newListing): ").strip().lower()
 
     if choice == "read":
         read()
@@ -119,5 +132,15 @@ if __name__ == '__main__':
         last_name = input("Enter Last Name: ")
         is_student = int(input("Is Student (0/1): "))
         newUser(user_id, email, password, is_admin, first_name, last_name, is_student)
+    elif choice == "newlisting":
+        list_user = input("Enter List User: ")
+        list_name = input("Enter List Name: ")
+        category = int(input("Enter Category: "))
+        description = input("Enter Description: ")
+        claim_description = input("Enter Claim Description: ")
+        is_claimed = int(input("Is Claimed (0/1): "))
+        picture1 = input("Enter Picture 1 URL: ")
+        picture2 = input("Enter Picture 2 URL: ")
+        newListing(list_user, list_name, category, description, claim_description, is_claimed, picture1, picture2)
     else:
         print("Invalid choice. Exiting.")
