@@ -4,9 +4,30 @@ import urllib.parse
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
+#from azure.storage.blob import BlobServiceClient
 
 # Load environment variables from .env
 load_dotenv()
+
+# Azure Blob Storage credentials from .env
+#AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+#AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME", "listings-images")
+
+# Initialize Blob Service Client
+#blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
+
+#def upload_image_to_blob(image_file, filename):
+ #   """Uploads an image to Azure Blob Storage and returns the URL."""
+  #  try:
+   #     blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=filename)
+    #    blob_client.upload_blob(image_file, overwrite=True)
+
+        # Return the image URL
+     #   return blob_client.url
+    #except Exception as e:
+     #   print(f"Error uploading image: {e}")
+      #  return None
+
 
 # Database credentials from environment variables
 DB_SERVER = os.getenv("DB_SERVER", "nestexchange.database.windows.net")
@@ -66,18 +87,17 @@ def read():
     except Exception as e:
         print(f"Error reading from Users table: {e}")
 
-
+#user Management for future implementations
 def verifyLogin(userID, userPassword):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("EXEC dbo.verifyLogin ?, ?", userID, userPassword)
 
-            # Fetch result if the procedure returns data
             result = cursor.fetchone()
 
             if result:
-                print(f"Login result: {result[0]}")  # Modify based on expected output
+                print(f"Login result: {result[0]}")  
                 return True
             else:
                 print("Login failed! No data returned.")
@@ -100,6 +120,7 @@ def newUser(userID, userEmail, userPassword, userIsAdmin, userFirstName, userLas
     except Exception as e:
         print(f"Error inserting new user: {e}")
 
+#Listing management for future work
 def newListing(aListUser, alistname, listCategory, alistdescription, aListClaimDescription, aIsClaimed, aListPicture, alistPicture2):
     try:
         with create_connection() as conn:
@@ -113,34 +134,59 @@ def newListing(aListUser, alistname, listCategory, alistdescription, aListClaimD
     except Exception as e:
         print(f"Error inserting new listing: {e}")
 
-# Run functions for testing
-if __name__ == '__main__':
-    choice = input("Choose function to run (read, login, newUser, newListing): ").strip().lower()
+def approve_listing(listID):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("EXEC approveListing ?", listID)
+            conn.commit()
+            print("Listing has been successfully approved!")
+    except Exception as e:
+        print(f"Error approving listing: {e}")
 
-    if choice == "read":
-        read()
-    elif choice == "login":
-        user_id = input("Enter User ID: ")
-        password = input("Enter Password: ")
-        verifyLogin(user_id, password)
-    elif choice == "newuser":
-        user_id = input("Enter User ID: ")
-        email = input("Enter Email: ")
-        password = input("Enter Password: ")
-        is_admin = int(input("Is Admin (0/1): "))
-        first_name = input("Enter First Name: ")
-        last_name = input("Enter Last Name: ")
-        is_student = int(input("Is Student (0/1): "))
-        newUser(user_id, email, password, is_admin, first_name, last_name, is_student)
-    elif choice == "newlisting":
-        list_user = input("Enter List User: ")
-        list_name = input("Enter List Name: ")
-        category = int(input("Enter Category: "))
-        description = input("Enter Description: ")
-        claim_description = input("Enter Claim Description: ")
-        is_claimed = int(input("Is Claimed (0/1): "))
-        picture1 = input("Enter Picture 1 URL: ")
-        picture2 = input("Enter Picture 2 URL: ")
-        newListing(list_user, list_name, category, description, claim_description, is_claimed, picture1, picture2)
-    else:
-        print("Invalid choice. Exiting.")
+
+def reject_listing(listID):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("EXEC dontApproveListing ?", listID)
+            conn.commit()
+            print("Listing has been successfully rejected!")
+    except Exception as e:
+        print(f"Error rejecting listing: {e}")
+
+
+def delete_approved_listing(listID):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("EXEC deleteApprovedListing ?", listID)
+            conn.commit()
+            print("Listing has been successfully deleted!")
+    except Exception as e:
+        print(f"Error deleting listing: {e}")
+
+#Claiming and Selling management
+def claim_item(claimListID, claimedUserID, claimedReview, claimedRating):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "EXEC claimItem ?, ?, ?, ?",
+                (claimListID, claimedUserID, claimedReview, claimedRating)
+            )
+            conn.commit()
+            print("Item claimed successfully!")
+    except Exception as e:
+        print(f"Error claiming item: {e}")
+
+
+def sell_item(soldListID, soldReview, soldRating):
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("EXEC soldItem ?, ?, ?", (soldListID, soldReview, soldRating))
+            conn.commit()
+            print("Item marked as sold successfully!")
+    except Exception as e:
+        print(f"Error selling item: {e}")

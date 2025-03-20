@@ -6,6 +6,11 @@ from sqlalchemy.sql import text
 from database import get_db
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from fastapi import File, UploadFile, Form
+import shutil
+#from database import upload_image_to_blob
+
+
 
 app = FastAPI()
 
@@ -90,20 +95,26 @@ def open_browser():
 threading.Thread(target=open_browser).start()
 
 
-# Create a new Listing
 @app.post("/listings/create")
-def create_listing(
+async def create_listing(
     listUserID: str,
     listDate: str,
     listCategory: int,
     listDescription: str,
     listClaimDescription: str,
     isClaimed: int,
-    listPicture: str,
-    listPicture2: str,
+    listPicture: UploadFile = File(...),
+    listPicture2: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
     try:
+        # Save images to Azure Blob Storage
+        picture_url = upload_image_to_blob(listPicture.file, listPicture.filename)
+        picture2_url = upload_image_to_blob(listPicture2.file, listPicture2.filename)
+
+        if not picture_url or not picture2_url:
+            raise HTTPException(status_code=500, detail="Image upload failed")
+
         query = text("""
             INSERT INTO ListingTable (listUserID, listDate, listCategory, listDescription, 
                                       listClaimDescription, isClaimed, listPicture, listPicture2)
@@ -111,18 +122,77 @@ def create_listing(
                     :listClaimDescription, :isClaimed, :listPicture, :listPicture2)
         """)
         db.execute(query, {
-             "listUserID": listUserID,
+            "listUserID": listUserID,
             "listDate": listDate,
             "listCategory": listCategory,
             "listDescription": listDescription,
             "listClaimDescription": listClaimDescription,
             "isClaimed": isClaimed,
-            "listPicture": listPicture,
-            "listPicture2": listPicture2
+            "listPicture": picture_url,
+            "listPicture2": picture2_url
         })
         db.commit()
-        return{"message: Listing was create successfully"}
+
+        return {"message": "Listing created successfully", "listPicture": picture_url, "listPicture2": picture2_url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-     
+#Listing approve
+@app.post("/listings/approve")
+def approve_listing(listID: int = Form(...), db: Session = Depends(get_db)):
+    query = test("EXEC approveListing :listID")
+    db.execute(query, {"listID":listID})
+    db.commit()
+    return {"message": "The listing has been approved!"}     
+
+#Listing Reject
+@app.post("/listings/reject")
+def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
+    query = test("EXEC dontApproveListing :listID")
+    db.execute(query, {"listID":listID})
+    db.commit()
+    return {"message": "The listing has been rejected."}     
+
+#Listing Delete
+@app.post("/listings/delete")
+def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
+    query = test("EXEC deleteApproveListing :listID")
+    db.execute(query, {"listID" :listID})
+    db.commit()
+    return {"message": "The listing has been deleted."}     
+
+#Claiming listings
+@app.post("/listings/claim")
+def claim_item(
+    claimListId: int = Form(...),
+    claimedUserID: str = Form(...),
+    claimedReview: str = Form(...),
+    claimedRating: int = Form(...),
+    db: Session = Depends(get_db)
+):
+    query = text("EXEC claimItem :claimListId, :claimedUserID, :claimedReview, :claimedRating")
+    db.execute(query,{
+        "claimListId": claimListId,
+        "claimedUserID": claimedUserID,
+        "claimedReview": claimedReview,
+        "claimedRating": claimedRating
+    })
+    db.commit()
+    return {"message": "Item has been successfully claimed!"}
+
+#Items marked as sold/claimed.
+@app.post("/listings/sell")
+def sell_item(
+    soldListId: int = Form(...),
+    soldReview: str = Form(...),
+    soldRating: int = Form(...),
+    db: Session = Depends(get_db)
+):
+    query = text ("EXEC soldItem :soldListId, :soldReview, :soldRating")
+    db.execute(query,{
+        "soldListId": soldListId,
+        "soldReview": soldReview,
+        "soldRating": soldRating
+    })
+    db.commit()
+    return{"Message": "This Item has been marked as sold/claimed!"}
