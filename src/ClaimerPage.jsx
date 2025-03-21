@@ -12,14 +12,27 @@ export default function ClaimerPage() {
 
   // Define a function to handle the form submission (fetching listings)
   const onFormSubmit = async (event) => {
+<<<<<<< HEAD
     event.preventDefault();
+=======
+    // Prevent the default form submission behavior
+    event.preventDefault();
+    // Clear any previous errors
+>>>>>>> 693fb47c61cee26870d71bb16994b8d2e47fcebc
     setClaimError("");
 
     try {
       // Make a GET request to the server to fetch the listings
       const response = await axios.get("http://127.0.0.1:8000/listings");
+<<<<<<< HEAD
       setListings(response.data);
     } catch (error) {
+=======
+      // Update the state with the fetched listings
+      setListings(response.data);
+    } catch (error) {
+      // If an error occurs, update the state with the error message
+>>>>>>> 693fb47c61cee26870d71bb16994b8d2e47fcebc
       setClaimError(error.response?.data?.detail || "Failed to fetch listings.");
     }
   };
@@ -27,18 +40,33 @@ export default function ClaimerPage() {
   // Define a function to handle the claiming of a listing
   const handleClaim = async (listingId) => {
     try {
+<<<<<<< HEAD
       const response = await axios.post(
           `http://127.0.0.1:8000/claim/${listingId}`,
           { userId: localStorage.getItem("userID") }
+=======
+      // Make a POST request to the server to claim the listing
+      const response = await axios.post(
+          `http://127.0.0.1:8000/claim/${listingId}`,
+          { userId: localStorage.getItem("userID") } // Pass the user ID in the request body
+>>>>>>> 693fb47c61cee26870d71bb16994b8d2e47fcebc
       );
 
       // If the claiming is successful, update the state with the claimed listing ID
       if (response.data.message === "Listing claimed successfully") {
         setClaimedListing(listingId);
       } else {
+<<<<<<< HEAD
         setClaimError("Failed to claim listing.");
       }
     } catch (error) {
+=======
+        // If the claiming fails, update the state with an error message
+        setClaimError("Failed to claim listing.");
+      }
+    } catch (error) {
+      // If an error occurs, update the state with the error message
+>>>>>>> 693fb47c61cee26870d71bb16994b8d2e47fcebc
       setClaimError(error.response?.data?.detail || "Failed to claim listing.");
     }
   };
@@ -97,4 +125,8 @@ export default function ClaimerPage() {
         </div>
       </div>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 693fb47c61cee26870d71bb16994b8d2e47fcebc
