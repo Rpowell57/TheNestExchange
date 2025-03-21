@@ -1,16 +1,39 @@
+import os
 import webbrowser
 import threading
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 from database import get_db
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from fastapi import File, UploadFile, Form
-import shutil
-#from database import upload_image_to_blob
+from azure.storage.blob import BlobServiceClient
+from dotenv import load_dotenv
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Retrieve variables
+AZURE_STORAGE_SAS_URL = os.getenv("AZURE_STORAGE_SAS_URL")
+AZURE_STORAGE_CONTAINER_NAME = os.getenv("AZURE_STORAGE_CONTAINER_NAME")
+
+if not AZURE_STORAGE_SAS_URL:
+    raise ValueError("AZURE_STORAGE_SAS_URL is not set. Check your .env file.")
 
 
+# Initialize Blob Service Client using SAS URL
+blob_service_client = BlobServiceClient(account_url=AZURE_STORAGE_SAS_URL)
+
+def upload_image_to_blob(file, filename):
+    try:
+        blob_client = blob_service_client.get_blob_client(container=AZURE_STORAGE_CONTAINER_NAME, blob=filename)
+        blob_client.upload_blob(file.read(), overwrite=True)
+        return f"https://nextexchangeblob.blob.core.windows.net/{AZURE_STORAGE_CONTAINER_NAME}/{filename}"
+    except Exception as e:
+        print(f"Error uploading to Azure Blob: {e}")
+        return None
 
 app = FastAPI()
 
@@ -29,12 +52,10 @@ app.add_middleware(
     allow_headers=["*"],  
 )
 
-# Root Endpoint (Welcome Message)
 @app.get("/")
 def read_root():
     return {"message": "Welcome to The Nest Exchange API!"}
 
-# User Creation Endpoint
 class UserCreate(BaseModel):
     userID: str
     userEmail: str
@@ -48,22 +69,11 @@ class UserCreate(BaseModel):
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     try:
         query = text("EXEC newUser :userID, :userEmail, :userPassword, :userIsAdmin, :userFirstName, :userLastName, :userIsStudent")
-        db.execute(query, {
-            "userID": user.userID,
-            "userEmail": user.userEmail,
-            "userPassword": user.userPassword,
-            "userIsAdmin": user.userIsAdmin,
-            "userFirstName": user.userFirstName,
-            "userLastName": user.userLastName,
-            "userIsStudent": user.userIsStudent
-        })
+        db.execute(query, user.dict())
         db.commit()
         return {"message": "User created successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-# User Login Verification Endpoint
-from pydantic import BaseModel
 
 class LoginRequest(BaseModel):
     userID: str
@@ -73,27 +83,20 @@ class LoginRequest(BaseModel):
 def verify_login(login_data: LoginRequest, db: Session = Depends(get_db)):
     try:
         query = text("EXEC verifyLogin :userID, :userPassword")
-        result = db.execute(query, {
-            "userID": login_data.userID, 
-            "userPassword": login_data.userPassword
-        }).fetchone()
-
-        if result and result[0]:  # Ensure first value exists
+        result = db.execute(query, login_data.dict()).fetchone()
+        if result and result[0]:
             return {"message": "Login successful", "userID": login_data.userID}
         else:
             raise HTTPException(status_code=401, detail="Invalid credentials")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# Automatically open Swagger UI when the server starts
 def open_browser():
     import time
-    time.sleep(1)  # Give server time to start
+    time.sleep(1)  
     webbrowser.open("http://127.0.0.1:8000/docs")
 
 threading.Thread(target=open_browser).start()
-
 
 @app.post("/listings/create")
 async def create_listing(
@@ -108,7 +111,6 @@ async def create_listing(
     db: Session = Depends(get_db)
 ):
     try:
-        # Save images to Azure Blob Storage
         picture_url = upload_image_to_blob(listPicture.file, listPicture.filename)
         picture2_url = upload_image_to_blob(listPicture2.file, listPicture2.filename)
 
@@ -140,7 +142,7 @@ async def create_listing(
 #Listing approve
 @app.post("/listings/approve")
 def approve_listing(listID: int = Form(...), db: Session = Depends(get_db)):
-    query = test("EXEC approveListing :listID")
+    query = text("EXEC approveListing :listID")
     db.execute(query, {"listID":listID})
     db.commit()
     return {"message": "The listing has been approved!"}     
@@ -148,7 +150,7 @@ def approve_listing(listID: int = Form(...), db: Session = Depends(get_db)):
 #Listing Reject
 @app.post("/listings/reject")
 def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
-    query = test("EXEC dontApproveListing :listID")
+    query = text("EXEC dontApproveListing :listID")
     db.execute(query, {"listID":listID})
     db.commit()
     return {"message": "The listing has been rejected."}     
@@ -156,7 +158,7 @@ def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
 #Listing Delete
 @app.post("/listings/delete")
 def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
-    query = test("EXEC deleteApproveListing :listID")
+    query = text("EXEC deleteApproveListing :listID")
     db.execute(query, {"listID" :listID})
     db.commit()
     return {"message": "The listing has been deleted."}     

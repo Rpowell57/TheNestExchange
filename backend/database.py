@@ -4,30 +4,34 @@ import urllib.parse
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
-#from azure.storage.blob import BlobServiceClient
+from models import Base
+from azure.storage.blob import BlobServiceClient
 
-# Load environment variables from .env
+#Load environment variables from .env
 load_dotenv()
 
-# Azure Blob Storage credentials from .env
-#AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-#AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME", "listings-images")
+# Load environment variables
+AZURE_STORAGE_SAS_URL = os.getenv("AZURE_STORAGE_SAS_URL")  # Full URL with SAS token
+AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")  # Container name
 
-# Initialize Blob Service Client
-#blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
+# Initialize BlobServiceClient using the SAS URL
+blob_service_client = BlobServiceClient(account_url=AZURE_STORAGE_SAS_URL)
 
-#def upload_image_to_blob(image_file, filename):
- #   """Uploads an image to Azure Blob Storage and returns the URL."""
-  #  try:
-   #     blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=filename)
-    #    blob_client.upload_blob(image_file, overwrite=True)
+def upload_image_to_blob(image_file, filename):
+    """Uploads an image to Azure Blob Storage using SAS URL and returns the URL."""
+    try:
+        # Get a blob client for the specified file
+        blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=filename)
 
-        # Return the image URL
-     #   return blob_client.url
-    #except Exception as e:
-     #   print(f"Error uploading image: {e}")
-      #  return None
+        # Upload the file
+        blob_client.upload_blob(image_file, overwrite=True)
 
+        # Return the URL of the uploaded file
+        return f"https://nextexchangeblob.blob.core.windows.net/{AZURE_CONTAINER_NAME}/{filename}"
+    
+    except Exception as e:
+        print(f"Error uploading image: {e}")
+        return None
 
 # Database credentials from environment variables
 DB_SERVER = os.getenv("DB_SERVER", "nestexchange.database.windows.net")
@@ -51,6 +55,7 @@ try:
     print("Database connection successful!")
 except Exception as e:
     print(f"Database connection failed: {e}")
+
 
 # FastAPI Dependency for Database Session
 def get_db():
