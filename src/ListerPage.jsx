@@ -2,10 +2,10 @@ import { useState } from 'react'
 import "./ListerPage.css"; // Import the CSS file for styling
 
 function ListerPage() {
-    const [formData, setFormData] = useState({ title: "", description: "" });
+    const [formData, setFormData] = useState({ title: "", description: "", condition: "used" });
 
     const handleSubmit = () => {
-    console.log("Form submitted with:", formData);
+        console.log("Form submitted with:", formData);
     }
     const handleChange = (event) => {
         const { name, value } = event.target;
@@ -28,6 +28,20 @@ function ListerPage() {
 
                         <input type="text" id="title_input" placeholder="Description..." name="description" value={formData.description} onChange={handleChange} class="input" />
 
+                        <div class="radio-inputs" style={{ justifySelf: 'center' }} >
+                            <label class="radio">
+                                <input type="radio" name="radio" onClick={formData.condition === "used"} />
+                                    <span class="name">Used</span>
+                            </label>
+                            <label class="radio">
+                                <input type="radio" name="radio" onClick={formData.condition === "good"} />
+                                <span class="name">Good</span>
+                            </label>
+                            <label class="radio">
+                                <input type="radio" name="radio" onClick={formData.condition === "new"} />
+                                <span class="name">New</span>
+                            </label>
+                        </div>
                         <div style={{ justifySelf: 'center' }}>
                             <button className="done-button" type='submit' onClick={handleSubmit}>
                         Submit
