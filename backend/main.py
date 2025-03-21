@@ -9,8 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from azure.storage.blob import BlobServiceClient
 from dotenv import load_dotenv
-from dotenv import load_dotenv
-import os
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -46,7 +45,7 @@ origins = [
 # Add CORS middleware configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],  
     allow_headers=["*"],  
@@ -164,23 +163,24 @@ def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
     return {"message": "The listing has been deleted."}     
 
 #Claiming listings
-@app.post("/listings/claim")
-def claim_item(
-    claimListId: int = Form(...),
+@app.post("/claim/{listing_id}")
+def claim_listing(
+    listing_id: int,
     claimedUserID: str = Form(...),
     claimedReview: str = Form(...),
     claimedRating: int = Form(...),
     db: Session = Depends(get_db)
 ):
-    query = text("EXEC claimItem :claimListId, :claimedUserID, :claimedReview, :claimedRating")
-    db.execute(query,{
-        "claimListId": claimListId,
+    query = text("EXEC claimItem :listing_id, :claimedUserID, :claimedReview, :claimedRating")
+    db.execute(query, {
+        "listing_id": listing_id,
         "claimedUserID": claimedUserID,
         "claimedReview": claimedReview,
         "claimedRating": claimedRating
     })
     db.commit()
     return {"message": "Item has been successfully claimed!"}
+
 
 #Items marked as sold/claimed.
 @app.post("/listings/sell")
@@ -198,3 +198,34 @@ def sell_item(
     })
     db.commit()
     return{"Message": "This Item has been marked as sold/claimed!"}
+
+@app.get("/listings")
+def get_listings(db: Session = Depends(get_db)):
+    try:
+        query = text("""
+            SELECT id, listUserID, listDate, listCategory, listDescription, 
+                   listClaimDescription, isClaimed, listPicture, listPicture2 
+            FROM ListingTable
+        """)
+        result = db.execute(query).fetchall()
+
+        listings = [
+            {
+                "id": row.id,  
+                "listUserID": row.listUserID,
+                "listDate": row.listDate,
+                "listCategory": row.listCategory,
+                "listDescription": row.listDescription,
+                "listClaimDescription": row.listClaimDescription,
+                "isClaimed": row.isClaimed,
+                "listPicture": row.listPicture if row.listPicture else "",
+                "listPicture2": row.listPicture2 if row.listPicture2 else "",
+            }
+            for row in result
+        ]
+
+        return listings
+    except Exception as e:
+        print(f"Error fetching listings: {e}")  
+        raise HTTPException(status_code=500, detail=str(e))
+

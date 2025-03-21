@@ -1,101 +1,116 @@
-// Import the necessary dependencies
-import { useState } from "react";
+// Import necessary dependencies
+import { useState, useEffect } from "react";
 import axios from "axios";
 import "./ClaimerPage.css";
 
 // Define the ClaimerPage component
 export default function ClaimerPage() {
-  // Initialize state variables to store the listings and any errors
-  const [listings, setListings] = useState([]); // Store the fetched listings
-  const [claimedListing, setClaimedListing] = useState(""); // Store the ID of the claimed listing
-  const [claimError, setClaimError] = useState(""); // Store any errors that occur during the claiming process
+  // Initialize state variables
+  const [listings, setListings] = useState([]); // Store fetched listings
+  const [claimedListing, setClaimedListing] = useState(""); // Store claimed listing ID
+  const [claimError, setClaimError] = useState(""); // Store errors
+  const [loading, setLoading] = useState(true); // Track loading state
 
-  // Define a function to handle the form submission (fetching listings)
-  const onFormSubmit = async (event) => {
-    event.preventDefault();
-    setClaimError("");
+  // Fetch listings when the page loads
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        const response = await axios.get("http://127.0.0.1:8000/listings");
+        console.log("Fetched Listings:", response.data); // Debugging step
+        setListings(response.data);
+      } catch (error) {
+        setClaimError(error.response?.data?.detail || "Failed to fetch listings.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    try {
-      // Make a GET request to the server to fetch the listings
-      const response = await axios.get("http://127.0.0.1:8000/listings");
-      setListings(response.data);
-    } catch (error) {
-      setClaimError(error.response?.data?.detail || "Failed to fetch listings.");
-    }
-  };
+    fetchListings();
+  }, []);
 
-  // Define a function to handle the claiming of a listing
+  // Handle claiming a listing
   const handleClaim = async (listingId) => {
     try {
-      const response = await axios.post(
-          `http://127.0.0.1:8000/claim/${listingId}`,
-          { userId: localStorage.getItem("userID") }
-      );
+      const userId = localStorage.getItem("userID"); // Ensure userID exists
+      if (!userId) {
+        setClaimError("User ID not found. Please log in.");
+        return;
+      }
 
-      // If the claiming is successful, update the state with the claimed listing ID
-      if (response.data.message === "Listing claimed successfully") {
+      const formData = new FormData();
+      formData.append("claimedUserID", userId);
+      formData.append("claimedReview", "Great item!");
+      formData.append("claimedRating", 5);
+
+      const response = await axios.post(`http://127.0.0.1:8000/claim/${listingId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (response.data.message === "Item has been successfully claimed!") {
         setClaimedListing(listingId);
       } else {
         setClaimError("Failed to claim listing.");
       }
     } catch (error) {
-
       setClaimError(error.response?.data?.detail || "Failed to claim listing.");
     }
   };
 
   // Render the component
   return (
-      // Use a container div to wrap the component
-      <div className="container claimer-container">
-        // Use a box div to contain the component content
-        <div className="claimer-box">
-          // Display a heading for the component
-          <h1>Claim a Listing</h1>
-
-          // Define a form to handle the fetching of listings
-          <form onSubmit={onFormSubmit}>
-            // Use a button group div to contain the "Fetch Listings" button
-            <div className="button-group">
-              // Display a button to fetch the listings
-              <button type="submit" className="btn btn-secondary">Fetch Listings</button>
+    <div className="container claimer-container">
+      <div className="claimer-box">
+        <h1>Claim a Listing</h1>
+        <div className="claims-section">
+          {/* Display error message if any */}
+          {claimError && (
+            <div className="alert alert-danger">
+              <strong>{claimError}</strong>
             </div>
+          )}
 
-            // If an error occurs, display an error message
-            {claimError && (
-                // Use an alert div to display the error message
-                <div className="alert alert-danger">
-                  // Display the error message
-                  <strong>{claimError}</strong>
-                </div>
-            )}
+          {/* Show loading message while fetching data */}
+          {loading && <div className="loading-message">Fetching listings...</div>}
 
-            // If listings are available, display them
-            {listings.length > 0 && (
-                // Use a listings section div to contain the listings
-                <div className="listings-section">
-                  // Map over the listings and display each one
-                  {listings.map((listing) => (
-                      // Use a listing card div to contain each listing
-                      <div key={listing.id} className="listing-card">
-                        // Display the listing title
-                        <h3>{listing.title}</h3>
-                        // Display the listing description
-                        <p>{listing.description}</p>
-                        // Display a button to claim the listing
-                        <button
-                            type="button"
-                            className="btn btn-primary"
-                            onClick={() => handleClaim(listing.id)}
-                        >
-                          Claim
-                        </button>
-                      </div>
-                  ))}
+          {/* Display listings if available */}
+          {!loading && listings.length > 0 ? (
+            <div className="listings-section">
+              {listings.map((listing) => (
+                <div key={listing.id} className="listing-card">
+                  <h3>Listing #{listing.id}</h3>
+                  {/* Display Listing Images */}
+                  {listing.listPicture && (
+                    <img 
+                      src={listing.listPicture} 
+                      alt="Listing Image 1" 
+                      className="listing-image"
+                      onError={(e) => console.error("Image failed to load:", listing.listPicture, e)}
+                    />
+                  )}
+                  {listing.listPicture2 && (
+                    <img 
+                      src={listing.listPicture2} 
+                      alt="Listing Image 2" 
+                      className="listing-image"
+                      onError={(e) => console.error("Image failed to load:", listing.listPicture2, e)}
+                    />
+                  )}
+                  <p>{listing.listDescription}</p>
+                  <button
+                    type="button"
+                    className="btn btn-primary claim-button"
+                    onClick={() => handleClaim(listing.id)}
+                  >
+                    Claim
+                  </button>
                 </div>
-            )}
-          </form>
+              ))}
+            </div>
+          ) : (
+            !loading && <div className="error-message">No listings available.</div>
+          )}
         </div>
       </div>
+    </div>
   );
 }

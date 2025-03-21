@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import ksuLogo from "./assets/ksulogo.png";
-
+import "./Navbar.css";
 export default function NavBar() {
     const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("userID")); // ✅ Initial state check
 

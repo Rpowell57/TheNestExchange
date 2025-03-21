@@ -1,8 +1,13 @@
+body {
+    padding-top: 80px; /* Adjust this based on navbar height */
+}
 
 .lister-container {
     text-align: center;
     padding: 50px 20px;
+    margin-top: 20px; /* Small margin after the navbar */
 }
+
 /* From Uiverse.io by adamgiebl */
 .input-wrapper input {
     background-color: #eee;
@@ -16,13 +21,12 @@
     cursor: pointer;
 }
 
-    .input-wrapper input:focus {
-        outline-color: #E2C116;
-    }
+.input-wrapper input:focus {
+    outline-color: #E2C116;
+}
 
 .done-button {
     cursor: pointer;
-    position: center;
     padding: 10px 24px;
     font-size: 16px;
     width: 150px;
@@ -32,39 +36,39 @@
     background-color: transparent;
     font-weight: 600;
     transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+    position: relative;
     overflow: hidden;
 }
 
-    .done-button::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        margin: auto;
-        width: 50px;
-        height: 50px;
-        border-radius: inherit;
-        scale: 1;
-        z-index: -1;
-        background-color: #c4a114;
-        transition: all 0.6s cubic-bezier(0.23, 1, 0.320, 1);
-    }
+.done-button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 50px;
+    height: 50px;
+    border-radius: inherit;
+    scale: 1;
+    z-index: -1;
+    background-color: #c4a114;
+    transition: all 0.6s cubic-bezier(0.23, 1, 0.320, 1);
+}
 
-    .done-button:hover::before {
-        scale: 3;
-    }
+.done-button:hover::before {
+    scale: 3;
+}
 
-    .done-button:hover {
-        color: #212121;
-        scale: 1.1;
-        box-shadow: 0 0px 20px rgba(193, 163, 98,0.4);
-    }
+.done-button:hover {
+    color: #212121;
+    scale: 1.1;
+    box-shadow: 0 0px 20px rgba(193, 163, 98, 0.4);
+}
 
-    .done-button:active {
-        scale: 1;
-    }
+.done-button:active {
+    scale: 1;
+}
 
 .radio-inputs {
-    position: relative;
     display: flex;
     flex-wrap: wrap;
     border-radius: 0.5rem;
@@ -76,31 +80,31 @@
     font-size: 14px;
 }
 
-    .radio-inputs .radio {
-        flex: 1 1 auto;
-        text-align: center;
-    }
+.radio-inputs .radio {
+    flex: 1 1 auto;
+    text-align: center;
+}
 
-        .radio-inputs .radio input {
-            display: none;
-        }
+.radio-inputs .radio input {
+    display: none;
+}
 
-        .radio-inputs .radio .name {
-            display: flex;
-            cursor: pointer;
-            align-items: center;
-            justify-content: center;
-            border-radius: 0.5rem;
-            border: none;
-            padding: .5rem 0;
-            color: rgba(51, 65, 85, 1);
-            transition: all .15s ease-in-out;
-        }
+.radio-inputs .radio .name {
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    border: none;
+    padding: .5rem 0;
+    color: rgba(51, 65, 85, 1);
+    transition: all .15s ease-in-out;
+}
 
-        .radio-inputs .radio input:checked + .name {
-            background-color: #fff;
-            font-weight: 600;
-        }
+.radio-inputs .radio input:checked + .name {
+    background-color: #fff;
+    font-weight: 600;
+}
 
 .hero-section {
     background: #f4f4f4;
@@ -108,18 +112,18 @@
     border-radius: 10px;
 }
 
-    .hero-section h1 {
-        font-size: 40px;
-        font-weight: bold;
-        color: #333;
-    }
+.hero-section h1 {
+    font-size: 40px;
+    font-weight: bold;
+    color: #333;
+}
 
-    .hero-section p {
-        font-size: 18px;
-        color: #666;
-        max-width: 700px;
-        margin: 10px auto;
-    }
+.hero-section p {
+    font-size: 18px;
+    color: #666;
+    max-width: 700px;
+    margin: 10px auto;
+}
 
 .btn {
     display: inline-block;
@@ -132,17 +136,15 @@
     transition: background-color 0.3s ease;
 }
 
-
 .btn-primary {
     background-color: #E2C116;
     color: black;
     border: none;
 }
 
-    .btn-primary:hover {
-        background-color: #c4a114;
-    }
-
+.btn-primary:hover {
+    background-color: #c4a114;
+}
 
 .btn-secondary {
     background-color: #3f51b5;
@@ -150,19 +152,18 @@
     border: none;
 }
 
-    .btn-secondary:hover {
-        background-color: #344395;
-    }
-
+.btn-secondary:hover {
+    background-color: #344395;
+}
 
 .features-section {
     margin-top: 60px;
 }
 
-    .features-section h2 {
-        font-size: 32px;
-        color: #222;
-    }
+.features-section h2 {
+    font-size: 32px;
+    color: #222;
+}
 
 .features {
     display: flex;
@@ -180,16 +181,15 @@
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-    .feature-card h3 {
-        font-size: 22px;
-        color: #333;
-    }
+.feature-card h3 {
+    font-size: 22px;
+    color: #333;
+}
 
-    .feature-card p {
-        font-size: 16px;
-        color: #666;
-    }
-
+.feature-card p {
+    font-size: 16px;
+    color: #666;
+}
 
 .cta-section {
     margin-top: 80px;
@@ -198,12 +198,12 @@
     border-radius: 10px;
 }
 
-    .cta-section h2 {
-        font-size: 28px;
-        color: #222;
-    }
+.cta-section h2 {
+    font-size: 28px;
+    color: #222;
+}
 
-    .cta-section p {
-        font-size: 18px;
-        color: #555;
-    }
+.cta-section p {
+    font-size: 18px;
+    color: #555;
+}
