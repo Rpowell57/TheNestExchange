@@ -86,8 +86,9 @@ function ListerPage() {
               value={formData.description}
               onChange={handleChange}
               className="input"
-            />
-            <div class="radio-inputs">
+                      />
+                      <div class="radio-inputs" style={{ justifyContent: "center" }}>
+            <p>Item Condition: </p>
                 <label class="radio">
                     <input type="radio" name="condition" checked={formData.condition === "Used"} onChange={() => setCondition("Used")} />
                         <span class="name">Used</span>
