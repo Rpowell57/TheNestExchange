@@ -6,6 +6,7 @@ function ListerPage() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    condition: "",
   });
   const [imageFile, setImageFile] = useState(null); // Store the uploaded image file
   const [uploadError, setUploadError] = useState(""); // Handle errors
@@ -17,7 +18,14 @@ function ListerPage() {
       ...prevData,
       [name]: value, // Dynamically updates the correct field
     }));
-  };
+    };
+    const setCondition = (condition) => {
+        setFormData((prevData) => ({
+            ...prevData,
+            condition,
+        }));
+        console.log("Form condition updated successfully:", formData.condition);
+    };
 
   // Handle image file selection
   const handleFileChange = (event) => {
@@ -32,6 +40,8 @@ function ListerPage() {
     const formDataToSend = new FormData();
     formDataToSend.append("title", formData.title);
     formDataToSend.append("description", formData.description);
+    formDataToSend.append("condition", formData.condition);
+
     if (imageFile) {
       formDataToSend.append("image", imageFile); // Attach the image file
     }
@@ -77,6 +87,21 @@ function ListerPage() {
               onChange={handleChange}
               className="input"
             />
+            <div class="radio-inputs">
+                <label class="radio">
+                    <input type="radio" name="condition" checked={formData.condition === "Used"} onChange={() => setCondition("Used")} />
+                        <span class="name">Used</span>
+                </label>
+                <label class="radio">
+                    <input type="radio" name="condition" checked={formData.condition === "Good"} onChange={() => setCondition("Good")} />
+                        <span class="name">Good</span>
+                </label>
+
+                <label class="radio">
+                    <input type="radio" name="condition" checked={formData.condition === "New"} onChange={() => setCondition("New")} />
+                        <span class="name">New</span>
+                </label>
+            </div>
 
             {/* Image Upload Input */}
             <input
