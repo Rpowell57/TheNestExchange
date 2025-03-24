@@ -9,7 +9,7 @@ Currently, two official plugins are available:
 
 
 
-#BACKEND PYTHON
+# BACKEND PYTHON
 
 This template will provide an easy set-up explination on how to get the backend up and functioning.
 
