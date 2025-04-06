@@ -3,6 +3,7 @@ import redis
 import webbrowser
 import threading
 import json
+from azure.core.exceptions import AzureError
 from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
@@ -11,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from azure.storage.blob import BlobServiceClient
 from dotenv import load_dotenv
+from database import upload_image_to_blob
 
 # Load environment variables
 load_dotenv()
@@ -25,17 +27,8 @@ if not AZURE_STORAGE_SAS_URL:
 # Initialize Blob Service Client using SAS URL
 blob_service_client = BlobServiceClient(account_url=AZURE_STORAGE_SAS_URL)
 
-def upload_image_to_blob(file, filename):
-    try:
-        blob_client = blob_service_client.get_blob_client(container=AZURE_STORAGE_CONTAINER_NAME, blob=filename)
-        blob_client.upload_blob(file.read(), overwrite=True)
+import traceback
 
-        # Generate the full URL with the SAS token
-        sas_url = f"{blob_client.url}?{AZURE_STORAGE_SAS_URL.split('?')[1]}"
-        return sas_url
-    except Exception as e:
-        print(f"Error uploading to Azure Blob: {e}")
-        return None
 
 
 
@@ -66,6 +59,14 @@ test_redis()
 
 app = FastAPI()
 
+@app.post("/upload-image/")
+async def upload_image(file: UploadFile = File(...)):
+    image_url = upload_image_to_blob(file.file, file.filename)
+    if image_url:
+        return {"image_url": image_url}
+    else:
+        raise HTTPException(status_code=500, detail="Image upload failed.")
+        
 # Define allowed origins for security
 origins = [
     "http://localhost:5173",  
@@ -97,12 +98,15 @@ class UserCreate(BaseModel):
 @app.post("/users/create")
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     try:
-        query = text("EXEC newUser :userID, :userEmail, :userPassword, :userIsAdmin, :userFirstName, :userLastName, :userIsStudent")
-        db.execute(query, user.dict())
+        db.execute(
+            "EXEC newUser :userID, :userEmail, :userPassword, :userIsAdmin, :userFirstName, :userLastName, :userIsStudent",
+            user.dict()
+        )
         db.commit()
         return {"message": "User created successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 class LoginRequest(BaseModel):
     userID: str
@@ -150,17 +154,18 @@ async def create_listing(
     db: Session = Depends(get_db)
 ):
     try:
-        # Read file content asynchronously
+        # Read and upload image 1
         picture_data = await listPicture.read()
+        picture_filename = f"{uuid.uuid4()}{os.path.splitext(listPicture.filename)[1]}"
+        picture_url = upload_image_to_blob(picture_data, picture_filename)
+
+        # Read and upload image 2
         picture2_data = await listPicture2.read()
+        picture2_filename = f"{uuid.uuid4()}{os.path.splitext(listPicture2.filename)[1]}"
+        picture2_url = upload_image_to_blob(picture2_data, picture2_filename)
 
-        picture_url = upload_image_to_blob(picture_data, listPicture.filename)
-        picture2_url = upload_image_to_blob(picture2_data, listPicture2.filename)
-
-        if not picture_url or not picture2_url:
-            raise HTTPException(status_code=500, detail="Image upload failed")
-
-        query = text("""
+        # Insert into database
+        query = text(""" 
             INSERT INTO ListingTable (listUserID, listDate, listCategory, listDescription, 
                                       listClaimDescription, isClaimed, listPicture, listPicture2)
             VALUES (:listUserID, :listDate, :listCategory, :listDescription, 
@@ -178,10 +183,36 @@ async def create_listing(
         })
         db.commit()
 
-        # Invalidate cache after inserting a new listing
+        # Invalidate cache
         redis_client.delete("listings:all")
 
-        return {"message": "Listing created successfully", "listPicture": picture_url, "listPicture2": picture2_url}
+        return {
+            "message": "Listing created successfully",
+            "listPicture": picture_url,
+            "listPicture2": picture2_url
+        }
+
+    except Exception as e:
+        print(f"Error creating listing: {e}")
+        raise HTTPException(status_code=500, detail="Error creating listing")
+
+
+@app.post("/test/upload-image")
+async def test_image_upload(image: UploadFile = File(...)):
+    try:
+        # Read the image file content asynchronously
+        image_data = await image.read()
+
+        # Generate a filename for the image
+        filename = image.filename
+
+        # Upload the image to Azure Blob Storage
+        image_url = upload_image_to_blob(image_data, filename)
+
+        if image_url:
+            return {"message": "Image uploaded successfully", "image_url": image_url}
+        else:
+            raise HTTPException(status_code=500, detail="Image upload failed")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -320,8 +351,17 @@ def get_listings(db: Session = Depends(get_db)):
                 for row in result
             ]
 
-            # Cache the results for 10 minutes
-            redis_client.setex(cache_key, 600, json.dumps(listings))  # Store as a valid JSON string
+            # Cache only metadata, not the images
+            redis_client.setex(cache_key, 600, json.dumps([{
+                "id": listing["id"],
+                "listUserID": listing["listUserID"],
+                "listDate": listing["listDate"],
+                "listCategory": listing["listCategory"],
+                "listDescription": listing["listDescription"],
+                "listClaimDescription": listing["listClaimDescription"],
+                "isClaimed": listing["isClaimed"]
+            } for listing in listings]))  # Store as a valid JSON string
+
             return listings
         except Exception as e:
             print(f"Error fetching listings: {e}")

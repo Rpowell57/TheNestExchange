@@ -2,6 +2,7 @@ import pyodbc
 import os
 import urllib.parse
 import redis
+import json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
@@ -22,7 +23,9 @@ AZURE_STORAGE_SAS_URL = os.getenv("AZURE_STORAGE_SAS_URL")
 AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")  
 
 # Initialize BlobServiceClient using the SAS URL
-blob_service_client = BlobServiceClient(account_url=AZURE_STORAGE_SAS_URL)
+account_url = f"https://{os.getenv('AZURE_STORAGE_ACCOUNT_NAME')}.blob.core.windows.net"
+blob_service_client = BlobServiceClient(account_url=account_url, credential=AZURE_STORAGE_SAS_URL)
+
 
 def upload_image_to_blob(image_file, filename):
     """Uploads an image to Azure Blob Storage using SAS URL and returns the URL."""
@@ -34,7 +37,7 @@ def upload_image_to_blob(image_file, filename):
         blob_client.upload_blob(image_file, overwrite=True)
 
         # Return the URL of the uploaded file
-        return f"https://nextexchangeblob.blob.core.windows.net/{AZURE_CONTAINER_NAME}/{filename}"
+        return f"https://nextexchangeblob.blob.core.windows.net/{AZURE_STORAGE_CONTAINER_NAME}/{filename}"
     
     except Exception as e:
         print(f"Error uploading image: {e}")
@@ -115,17 +118,19 @@ def verifyLogin(userID, userPassword):
     if cached_result:
         print("Cache hit for user login verification!")
         return cached_result == "True"
+    
     try:
-        with create_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("EXEC dbo.verifyLogin ?, ?", userID, userPassword)
-            result = cursor.fetchone()
-            if result:
-                redis_client.setex(cache_key, 3600, "True")  # Cache for 1 hour
-                return True
-            else:
-                redis_client.setex(cache_key, 3600, "False")
-                return False
+        db = next(get_db())  # Use SQLAlchemy session
+        result = db.execute(
+            "EXEC dbo.verifyLogin ?, ?", (userID, userPassword)
+        ).fetchone()
+        
+        if result:
+            redis_client.setex(cache_key, 3600, "True")
+            return True
+        else:
+            redis_client.setex(cache_key, 3600, "False")
+            return False
     except Exception as e:
         print(f"Error verifying login: {e}")
         return False
