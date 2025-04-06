@@ -66,7 +66,7 @@ async def upload_image(file: UploadFile = File(...)):
         return {"image_url": image_url}
     else:
         raise HTTPException(status_code=500, detail="Image upload failed.")
-        
+
 # Define allowed origins for security
 origins = [
     "http://localhost:5173",  
@@ -320,19 +320,19 @@ def get_listings(db: Session = Depends(get_db)):
     if cached_listings:
         print("Cache hit for listings!")
         try:
-            # Safely deserialize the cached listings
             listings = json.loads(cached_listings)
             return listings
         except json.JSONDecodeError:
             print("Error: Cached listings data is not valid JSON")
             return []  # Return an empty list or handle the error gracefully
     else:
-        # If no cache, fetch from the database
         try:
+            # Adjust the query to filter only approved listings (e.g., isClaimed = 1)
             query = text("""
                 SELECT id, listUserID, listDate, listCategory, listDescription, 
                        listClaimDescription, isClaimed, listPicture, listPicture2 
                 FROM ListingTable
+                WHERE isClaimed = 1  -- Only fetch approved listings
             """)
             result = db.execute(query).fetchall()
 
