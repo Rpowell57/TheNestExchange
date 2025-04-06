@@ -16,7 +16,7 @@ export default function ClaimerPage() {
     const fetchListings = async () => {
       try {
         const response = await axios.get("http://127.0.0.1:8000/listings");
-        console.log("Fetched Listings:", response.data); // Debugging step
+        console.log("Fetched Listings:", response.data); // Check the response to see if URLs include SAS token
         setListings(response.data);
       } catch (error) {
         setClaimError(error.response?.data?.detail || "Failed to fetch listings.");
@@ -24,9 +24,10 @@ export default function ClaimerPage() {
         setLoading(false);
       }
     };
-
+  
     fetchListings();
   }, []);
+  
 
   // Handle claiming a listing
   const handleClaim = async (listingId) => {

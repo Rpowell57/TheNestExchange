@@ -2,6 +2,7 @@ import os
 import redis
 import webbrowser
 import threading
+import json
 from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
@@ -28,10 +29,16 @@ def upload_image_to_blob(file, filename):
     try:
         blob_client = blob_service_client.get_blob_client(container=AZURE_STORAGE_CONTAINER_NAME, blob=filename)
         blob_client.upload_blob(file.read(), overwrite=True)
-        return f"https://nextexchangeblob.blob.core.windows.net/{AZURE_STORAGE_CONTAINER_NAME}/{filename}"
+
+        # Generate the full URL with the SAS token
+        sas_url = f"{blob_client.url}?{AZURE_STORAGE_SAS_URL.split('?')[1]}"
+        return sas_url
     except Exception as e:
         print(f"Error uploading to Azure Blob: {e}")
         return None
+
+
+
 
 # Redis Configuration
 REDIS_HOST = os.getenv("REDIS_HOST")
@@ -143,8 +150,12 @@ async def create_listing(
     db: Session = Depends(get_db)
 ):
     try:
-        picture_url = upload_image_to_blob(listPicture.file, listPicture.filename)
-        picture2_url = upload_image_to_blob(listPicture2.file, listPicture2.filename)
+        # Read file content asynchronously
+        picture_data = await listPicture.read()
+        picture2_data = await listPicture2.read()
+
+        picture_url = upload_image_to_blob(picture_data, listPicture.filename)
+        picture2_url = upload_image_to_blob(picture2_data, listPicture2.filename)
 
         if not picture_url or not picture2_url:
             raise HTTPException(status_code=500, detail="Image upload failed")
@@ -173,6 +184,7 @@ async def create_listing(
         return {"message": "Listing created successfully", "listPicture": picture_url, "listPicture2": picture2_url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 #Listing approve
@@ -209,11 +221,19 @@ def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
 
 #Listing Delete
 @app.post("/listings/delete")
-def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
-    query = text("EXEC deleteApproveListing :listID")
-    db.execute(query, {"listID" :listID})
-    db.commit()
-    return {"message": "The listing has been deleted."}     
+def delete_listing(listID: int = Form(...), db: Session = Depends(get_db)):
+    try:
+        query = text("EXEC deleteApproveListing :listID")
+        db.execute(query, {"listID": listID})
+        db.commit()
+
+        # Invalidate cache after deleting a listing
+        redis_client.delete("listings:all")
+
+        return {"message": "The listing has been deleted."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 #Claiming listings
 @app.post("/claim/{listing_id}")
@@ -259,6 +279,7 @@ def sell_item(
     })
     db.commit()
     return{"Message": "This Item has been marked as sold/claimed!"}
+from datetime import date
 
 @app.get("/listings")
 def get_listings(db: Session = Depends(get_db)):
@@ -267,35 +288,43 @@ def get_listings(db: Session = Depends(get_db)):
 
     if cached_listings:
         print("Cache hit for listings!")
-        return eval(cached_listings)  # Convert string back to list
+        try:
+            # Safely deserialize the cached listings
+            listings = json.loads(cached_listings)
+            return listings
+        except json.JSONDecodeError:
+            print("Error: Cached listings data is not valid JSON")
+            return []  # Return an empty list or handle the error gracefully
+    else:
+        # If no cache, fetch from the database
+        try:
+            query = text("""
+                SELECT id, listUserID, listDate, listCategory, listDescription, 
+                       listClaimDescription, isClaimed, listPicture, listPicture2 
+                FROM ListingTable
+            """)
+            result = db.execute(query).fetchall()
 
-    try:
-        query = text("""
-            SELECT id, listUserID, listDate, listCategory, listDescription, 
-                   listClaimDescription, isClaimed, listPicture, listPicture2 
-            FROM ListingTable
-        """)
-        result = db.execute(query).fetchall()
+            listings = [
+                {
+                    "id": row.id,
+                    "listUserID": row.listUserID,
+                    "listDate": row.listDate.strftime("%Y-%m-%d") if isinstance(row.listDate, date) else row.listDate,
+                    "listCategory": row.listCategory,
+                    "listDescription": row.listDescription,
+                    "listClaimDescription": row.listClaimDescription,
+                    "isClaimed": row.isClaimed,
+                    "listPicture": row.listPicture if row.listPicture else "",
+                    "listPicture2": row.listPicture2 if row.listPicture2 else "",
+                }
+                for row in result
+            ]
 
-        listings = [
-            {
-                "id": row.id,
-                "listUserID": row.listUserID,
-                "listDate": row.listDate,
-                "listCategory": row.listCategory,
-                "listDescription": row.listDescription,
-                "listClaimDescription": row.listClaimDescription,
-                "isClaimed": row.isClaimed,
-                "listPicture": row.listPicture if row.listPicture else "",
-                "listPicture2": row.listPicture2 if row.listPicture2 else "",
-            }
-            for row in result
-        ]
-
-        redis_client.setex(cache_key, 600, str(listings))  # Cache for 10 minutes
-        return listings
-    except Exception as e:
-        print(f"Error fetching listings: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+            # Cache the results for 10 minutes
+            redis_client.setex(cache_key, 600, json.dumps(listings))  # Store as a valid JSON string
+            return listings
+        except Exception as e:
+            print(f"Error fetching listings: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
 
