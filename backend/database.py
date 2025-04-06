@@ -1,18 +1,25 @@
 import pyodbc
 import os
 import urllib.parse
+import redis
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 from models import Base
 from azure.storage.blob import BlobServiceClient
 
-#Load environment variables from .env
+
 load_dotenv()
 
+#Redis setup
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = os.getenv("REDIS_PORT", 6379)
+REDIS_DB = os.getenv("REDIS_DB", 0)
+redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
+
 # Load environment variables
-AZURE_STORAGE_SAS_URL = os.getenv("AZURE_STORAGE_SAS_URL")  # Full URL with SAS token
-AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")  # Container name
+AZURE_STORAGE_SAS_URL = os.getenv("AZURE_STORAGE_SAS_URL") 
+AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")  
 
 # Initialize BlobServiceClient using the SAS URL
 blob_service_client = BlobServiceClient(account_url=AZURE_STORAGE_SAS_URL)
@@ -48,7 +55,6 @@ DATABASE_URL = f"mssql+pyodbc://{DB_USERNAME}:{encoded_password}@{DB_SERVER}/{DB
 # Print database connection string for debugging (excluding password)
 print("Connecting to:", DATABASE_URL.replace(encoded_password, "*****"))
 
-# SQLAlchemy setup
 try:
     engine = create_engine(DATABASE_URL, pool_pre_ping=True)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -80,35 +86,48 @@ def create_connection():
 
 
 def read():
+    cache_key = "users:all"
+    cached_data = redis_client.get(cache_key)
+    
+    if cached_data:
+        print("Cache hit! Fetching users from Redis.")
+        return json.loads(cached_data)
+    
     try:
         with create_connection() as conn:
             print("Reading data from Users table...")
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM Users;")
             rows = cursor.fetchall()
-            for row in rows:
-                print(f'row= {row}')
-                print()
+            user_list = [dict(zip([column[0] for column in cursor.description], row)) for row in rows]
+            
+            redis_client.setex(cache_key, 1800, json.dumps(user_list))  # Cache for 30 min
+            return user_list
     except Exception as e:
         print(f"Error reading from Users table: {e}")
+        return []
+
 
 #user Management for future implementations
 def verifyLogin(userID, userPassword):
+    cache_key = f"user:{userID}:auth"
+    cached_result = redis_client.get(cache_key)
+    if cached_result:
+        print("Cache hit for user login verification!")
+        return cached_result == "True"
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("EXEC dbo.verifyLogin ?, ?", userID, userPassword)
-
             result = cursor.fetchone()
-
             if result:
-                print(f"Login result: {result[0]}")  
+                redis_client.setex(cache_key, 3600, "True")  # Cache for 1 hour
                 return True
             else:
-                print("Login failed! No data returned.")
+                redis_client.setex(cache_key, 3600, "False")
                 return False
     except Exception as e:
-        print(f"WOMP WOMP - Error: {e}")
+        print(f"Error verifying login: {e}")
         return False
 
 
@@ -135,9 +154,24 @@ def newListing(aListUser, alistname, listCategory, alistdescription, aListClaimD
                 (aListUser, alistname, listCategory, alistdescription, aListClaimDescription, aIsClaimed, aListPicture, alistPicture2)
             )
             conn.commit()
-            print("New listing created successfully!")
+            listID = cursor.execute("SELECT SCOPE_IDENTITY()").fetchone()[0]  # Get last inserted ID
+            
+            # Cache the listing
+            listing_data = {
+                "user": aListUser,
+                "name": alistname,
+                "category": listCategory,
+                "description": alistdescription,
+                "claim_description": aListClaimDescription,
+                "is_claimed": aIsClaimed,
+                "picture1": aListPicture,
+                "picture2": alistPicture2
+            }
+            redis_client.setex(f"listing:{listID}", 3600, json.dumps(listing_data))
+            print("New listing created and cached successfully!")
     except Exception as e:
         print(f"Error inserting new listing: {e}")
+
 
 def approve_listing(listID):
     try:
@@ -145,6 +179,7 @@ def approve_listing(listID):
             cursor = conn.cursor()
             cursor.execute("EXEC approveListing ?", listID)
             conn.commit()
+            redis_client.setex(f"listing:{listID}:approved", 3600, "True")  # Cache approval status
             print("Listing has been successfully approved!")
     except Exception as e:
         print(f"Error approving listing: {e}")
@@ -156,9 +191,11 @@ def reject_listing(listID):
             cursor = conn.cursor()
             cursor.execute("EXEC dontApproveListing ?", listID)
             conn.commit()
+            redis_client.delete(f"listing:{listID}:approved")  # Remove from cache
             print("Listing has been successfully rejected!")
     except Exception as e:
         print(f"Error rejecting listing: {e}")
+
 
 
 def delete_approved_listing(listID):

@@ -1,4 +1,5 @@
 import os
+import redis
 import webbrowser
 import threading
 from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form
@@ -10,17 +11,15 @@ from pydantic import BaseModel
 from azure.storage.blob import BlobServiceClient
 from dotenv import load_dotenv
 
-
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
-# Retrieve variables
+# Retrieve Azure Storage variables
 AZURE_STORAGE_SAS_URL = os.getenv("AZURE_STORAGE_SAS_URL")
 AZURE_STORAGE_CONTAINER_NAME = os.getenv("AZURE_STORAGE_CONTAINER_NAME")
 
 if not AZURE_STORAGE_SAS_URL:
     raise ValueError("AZURE_STORAGE_SAS_URL is not set. Check your .env file.")
-
 
 # Initialize Blob Service Client using SAS URL
 blob_service_client = BlobServiceClient(account_url=AZURE_STORAGE_SAS_URL)
@@ -34,12 +33,36 @@ def upload_image_to_blob(file, filename):
         print(f"Error uploading to Azure Blob: {e}")
         return None
 
+# Redis Configuration
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = os.getenv("REDIS_PORT")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
+
+# Initialize Redis Client
+redis_client = redis.StrictRedis(
+    host=REDIS_HOST,
+    port=REDIS_PORT,
+    password=REDIS_PASSWORD,
+    ssl=True,
+    decode_responses=True
+)
+
+# Test Redis Connection
+def test_redis():
+    try:
+        redis_client.set("test_key", "Redis connection successful!")
+        print("Redis is connected!")
+    except Exception as e:
+        print(f"Redis connection failed: {e}")
+
+test_redis()
+
 app = FastAPI()
 
 # Define allowed origins for security
 origins = [
-    "http://localhost:5173",  # React Dev Server
-    "https://yourfrontend.com"  # Add production frontend URL
+    "http://localhost:5173",  
+    "https://yourfrontend.com"  
 ]
 
 # Add CORS middleware configuration
@@ -80,15 +103,25 @@ class LoginRequest(BaseModel):
 
 @app.post("/users/login")
 def verify_login(login_data: LoginRequest, db: Session = Depends(get_db)):
+    cache_key = f"user:{login_data.userID}:auth"
+    cached_result = redis_client.get(cache_key)
+    
+    if cached_result:
+        print("Cache hit for user login verification!")
+        return {"message": "Login successful", "userID": login_data.userID} if cached_result == "True" else HTTPException(status_code=401, detail="Invalid credentials")
+    
     try:
         query = text("EXEC verifyLogin :userID, :userPassword")
         result = db.execute(query, login_data.dict()).fetchone()
         if result and result[0]:
+            redis_client.setex(cache_key, 3600, "True")  # Cache login result for 1 hour
             return {"message": "Login successful", "userID": login_data.userID}
         else:
+            redis_client.setex(cache_key, 3600, "False")  # Store failed login attempt
             raise HTTPException(status_code=401, detail="Invalid credentials")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 def open_browser():
     import time
@@ -134,25 +167,45 @@ async def create_listing(
         })
         db.commit()
 
+        # Invalidate cache after inserting a new listing
+        redis_client.delete("listings:all")
+
         return {"message": "Listing created successfully", "listPicture": picture_url, "listPicture2": picture2_url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 #Listing approve
 @app.post("/listings/approve")
 def approve_listing(listID: int = Form(...), db: Session = Depends(get_db)):
-    query = text("EXEC approveListing :listID")
-    db.execute(query, {"listID":listID})
-    db.commit()
-    return {"message": "The listing has been approved!"}     
+    try:
+        query = text("EXEC approveListing :listID")
+        db.execute(query, {"listID": listID})
+        db.commit()
+
+        # Remove cached listings to refresh data
+        redis_client.delete("listings:all")
+
+        return {"message": "The listing has been approved!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+  
 
 #Listing Reject
 @app.post("/listings/reject")
 def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
-    query = text("EXEC dontApproveListing :listID")
-    db.execute(query, {"listID":listID})
-    db.commit()
-    return {"message": "The listing has been rejected."}     
+    try:
+        query = text("EXEC dontApproveListing :listID")
+        db.execute(query, {"listID": listID})
+        db.commit()
+
+        # Remove cached listings
+        redis_client.delete("listings:all")
+
+        return {"message": "The listing has been rejected."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+   
 
 #Listing Delete
 @app.post("/listings/delete")
@@ -171,15 +224,23 @@ def claim_listing(
     claimedRating: int = Form(...),
     db: Session = Depends(get_db)
 ):
-    query = text("EXEC claimItem :listing_id, :claimedUserID, :claimedReview, :claimedRating")
-    db.execute(query, {
-        "listing_id": listing_id,
-        "claimedUserID": claimedUserID,
-        "claimedReview": claimedReview,
-        "claimedRating": claimedRating
-    })
-    db.commit()
-    return {"message": "Item has been successfully claimed!"}
+    try:
+        query = text("EXEC claimItem :listing_id, :claimedUserID, :claimedReview, :claimedRating")
+        db.execute(query, {
+            "listing_id": listing_id,
+            "claimedUserID": claimedUserID,
+            "claimedReview": claimedReview,
+            "claimedRating": claimedRating
+        })
+        db.commit()
+
+        # Invalidate cache
+        redis_client.delete("listings:all")
+
+        return {"message": "Item has been successfully claimed!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 #Items marked as sold/claimed.
@@ -201,6 +262,13 @@ def sell_item(
 
 @app.get("/listings")
 def get_listings(db: Session = Depends(get_db)):
+    cache_key = "listings:all"
+    cached_listings = redis_client.get(cache_key)
+
+    if cached_listings:
+        print("Cache hit for listings!")
+        return eval(cached_listings)  # Convert string back to list
+
     try:
         query = text("""
             SELECT id, listUserID, listDate, listCategory, listDescription, 
@@ -211,7 +279,7 @@ def get_listings(db: Session = Depends(get_db)):
 
         listings = [
             {
-                "id": row.id,  
+                "id": row.id,
                 "listUserID": row.listUserID,
                 "listDate": row.listDate,
                 "listCategory": row.listCategory,
@@ -224,8 +292,10 @@ def get_listings(db: Session = Depends(get_db)):
             for row in result
         ]
 
+        redis_client.setex(cache_key, 600, str(listings))  # Cache for 10 minutes
         return listings
     except Exception as e:
-        print(f"Error fetching listings: {e}")  
+        print(f"Error fetching listings: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
