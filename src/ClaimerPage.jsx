@@ -11,15 +11,26 @@ export default function ClaimerPage() {
   const [claimError, setClaimError] = useState(""); // Store errors
   const [loading, setLoading] = useState(true); // Track loading state
 
-  // Fetch listings when the page loads
   useEffect(() => {
     const fetchListings = async () => {
+      setLoading(true);
       try {
         const response = await axios.get("http://127.0.0.1:8000/listings");
-        console.log("Fetched Listings:", response.data); // Check the response to see if URLs include SAS token
-        setListings(response.data);
+        console.log("Fetched Listings:", response.data); // Log API response
+  
+        // Ensure the data is an array
+        if (Array.isArray(response.data)) {
+          if (response.data.length === 0) {
+            console.log("No listings available.");
+          }
+          setListings(response.data);
+        } else {
+          console.error("Unexpected response format:", response.data); // Log unexpected response
+          throw new Error("Fetched data is not in the expected format.");
+        }
       } catch (error) {
-        setClaimError(error.response?.data?.detail || "Failed to fetch listings.");
+        const errorMessage = error.response?.data?.detail || error.message || "Failed to fetch listings.";
+        setClaimError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -28,27 +39,33 @@ export default function ClaimerPage() {
     fetchListings();
   }, []);
   
+  console.log("Listings after fetch:", listings); // Check the listings after fetch
+  
+  
 
-  // Handle claiming a listing
+  
+
   const handleClaim = async (listingId) => {
     try {
-      const userId = localStorage.getItem("userID"); // Ensure userID exists
+      const userId = localStorage.getItem("userID");
       if (!userId) {
         setClaimError("User ID not found. Please log in.");
         return;
       }
-
+  
       const formData = new FormData();
       formData.append("claimedUserID", userId);
       formData.append("claimedReview", "Great item!");
       formData.append("claimedRating", 5);
-
+  
       const response = await axios.post(`http://127.0.0.1:8000/claim/${listingId}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
+  
       if (response.data.message === "Item has been successfully claimed!") {
         setClaimedListing(listingId);
+        // Refetch listings after claiming one
+        fetchListings();
       } else {
         setClaimError("Failed to claim listing.");
       }
@@ -56,6 +73,8 @@ export default function ClaimerPage() {
       setClaimError(error.response?.data?.detail || "Failed to claim listing.");
     }
   };
+  
+  
 
   // Render the component
   return (
@@ -80,14 +99,17 @@ export default function ClaimerPage() {
                 <div key={listing.id} className="listing-card">
                   <h3>Listing #{listing.id}</h3>
                   {/* Display Listing Images */}
-                  {listing.listPicture && (
-                    <img 
-                      src={listing.listPicture} 
-                      alt="Listing Image 1" 
-                      className="listing-image"
-                      onError={(e) => console.error("Image failed to load:", listing.listPicture, e)}
+                  {listing.listPicture ? (
+                   <img 
+                    src={listing.listPicture} 
+                    alt="Listing Image 1" 
+                    className="listing-image"
+                    onError={(e) => e.target.src = '/path/to/fallback-image.jpg'} // Use a fallback image
                     />
+                    ) : (
+                    <div>No Image</div>
                   )}
+
                   {listing.listPicture2 && (
                     <img 
                       src={listing.listPicture2} 
@@ -109,6 +131,7 @@ export default function ClaimerPage() {
             </div>
           ) : (
             !loading && <div className="error-message">No listings available.</div>
+            
           )}
         </div>
       </div>

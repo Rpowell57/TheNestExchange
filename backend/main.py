@@ -3,6 +3,8 @@ import redis
 import webbrowser
 import threading
 import json
+import uuid
+import traceback
 from azure.core.exceptions import AzureError
 from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form
 from sqlalchemy.orm import Session
@@ -10,7 +12,7 @@ from sqlalchemy.sql import text
 from database import get_db
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 from dotenv import load_dotenv
 from database import upload_image_to_blob
 
@@ -27,9 +29,24 @@ if not AZURE_STORAGE_SAS_URL:
 # Initialize Blob Service Client using SAS URL
 blob_service_client = BlobServiceClient(account_url=AZURE_STORAGE_SAS_URL)
 
-import traceback
+def upload_image_to_blob(file, filename):
+    try:
+        # Initialize the BlobClient using the container and blob name
+        blob_client = blob_service_client.get_blob_client(container=AZURE_STORAGE_CONTAINER_NAME, blob=filename)
 
+        # If file is already a byte object, just upload it directly
+        if isinstance(file, bytes):
+            blob_client.upload_blob(file, overwrite=True)
+        else:
+            # If file is a file-like object, you can use .read() to get the bytes
+            blob_client.upload_blob(file.read(), overwrite=True)
+        
+        # Return the full URL for the uploaded blob
+        return f"https://nextexchangeblob.blob.core.windows.net/{AZURE_STORAGE_CONTAINER_NAME}/{filename}"
 
+    except Exception as e:
+        print(f"Error uploading to Azure Blob: {e}")
+        return None
 
 
 
