@@ -98,14 +98,18 @@ class UserCreate(BaseModel):
 @app.post("/users/create")
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     try:
-        db.execute(
-            "EXEC newUser :userID, :userEmail, :userPassword, :userIsAdmin, :userFirstName, :userLastName, :userIsStudent",
-            user.dict()
-        )
+    
+        query = text("""
+            EXEC newUser :userID, :userEmail, :userPassword, :userIsAdmin, :userFirstName, :userLastName, :userIsStudent
+        """)
+        
+        db.execute(query, user.dict())
         db.commit()
+
         return {"message": "User created successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 class LoginRequest(BaseModel):
@@ -122,16 +126,31 @@ def verify_login(login_data: LoginRequest, db: Session = Depends(get_db)):
         return {"message": "Login successful", "userID": login_data.userID} if cached_result == "True" else HTTPException(status_code=401, detail="Invalid credentials")
     
     try:
-        query = text("EXEC verifyLogin :userID, :userPassword")
+        query = text("""
+            EXEC verifyLogin :userID, :userPassword
+        """)
         result = db.execute(query, login_data.dict()).fetchone()
-        if result and result[0]:
-            redis_client.setex(cache_key, 3600, "True")  # Cache login result for 1 hour
-            return {"message": "Login successful", "userID": login_data.userID}
+
+        if result and result[0]:  
+            admin_check_query = text("""
+                SELECT userIsAdmin FROM UsersTable WHERE userID = :userID
+            """)
+            admin_result = db.execute(admin_check_query, {"userID": login_data.userID}).fetchone()
+
+            if admin_result and admin_result[0] == 1:  # Check if the user is an admin
+                is_admin = True
+            else:
+                is_admin = False
+
+            redis_client.setex(cache_key, 3600, "True")  
+            return {"message": "Login successful", "userID": login_data.userID, "isAdmin": is_admin}
         else:
-            redis_client.setex(cache_key, 3600, "False")  # Store failed login attempt
+            redis_client.setex(cache_key, 3600, "False") 
             raise HTTPException(status_code=401, detail="Invalid credentials")
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 def open_browser():
