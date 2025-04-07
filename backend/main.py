@@ -133,7 +133,7 @@ def verify_login(login_data: LoginRequest, db: Session = Depends(get_db)):
 
         if result and result[0]:  
             admin_check_query = text("""
-                SELECT userIsAdmin FROM UsersTable WHERE userID = :userID
+                SELECT userIsAdmin FROM Users WHERE userID = :userID
             """)
             admin_result = db.execute(admin_check_query, {"userID": login_data.userID}).fetchone()
 
