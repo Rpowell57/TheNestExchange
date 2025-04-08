@@ -4,7 +4,7 @@ import axios from "axios";
 import "./login.css";
 
 export default function Login() {
-    const [userID, setUserID] = useState(""); // Updated to match backend param
+    const [userID, setUserID] = useState(""); 
     const [password, setPassword] = useState("");
     const [loginError, setLoginError] = useState("");
 
@@ -12,7 +12,7 @@ export default function Login() {
 
     const onFormSubmit = async (event) => {
         event.preventDefault();
-        setLoginError(""); // Clear previous errors
+        setLoginError(""); 
     
         if (!userID || !password) {
             setLoginError("User ID and password are required.");
@@ -25,11 +25,23 @@ export default function Login() {
                 { userID, userPassword: password }, // Send as JSON body
                 { headers: { "Content-Type": "application/json" } } 
             );
-    
-            if (response.data.message === "Login successful") {
-                localStorage.setItem("userID", userID);
+            console.log("Response from server:", response.data); 
+
+            const data = response.data;
+            if (data.message === "Login successful") {
+                
+                localStorage.setItem("userID", data.userID);
+                try {
+                    const adminResponse = await axios.get(`http://127.0.0.1:8000/users/check-admin?userID=${data.userID}`);
+                    const isAdmin = adminResponse.data.isAdmin;
+                    localStorage.setItem("userIsAdmin", isAdmin ? "1" : "0");
+                } catch (error) {
+                    console.error("Failed to fetch admin status", error);
+                    localStorage.setItem("userIsAdmin", "0");
+                }
+            
                 window.dispatchEvent(new Event("storage"));
-                navigate("/ClaimerPage"); // Redirect on success
+                navigate("/ClaimerPage");
             } else {
                 setLoginError("Invalid credentials.");
             }

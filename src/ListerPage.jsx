@@ -1,6 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
-import "./ListerPage.css"; // Import the CSS file for styling
+import "./ListerPage.css";
 
 function ListerPage() {
   const [formData, setFormData] = useState({
@@ -8,55 +8,81 @@ function ListerPage() {
     description: "",
     condition: "",
   });
-  const [imageFile, setImageFile] = useState(null); // Store the uploaded image file
-  const [uploadError, setUploadError] = useState(""); // Handle errors
 
-  // Handle input field changes
+  const [imageFiles, setImageFiles] = useState([]);
+  const [uploadError, setUploadError] = useState("");
+
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: value, // Dynamically updates the correct field
+      [name]: value,
     }));
-    };
-    const setCondition = (condition) => {
-        setFormData((prevData) => ({
-            ...prevData,
-            condition,
-        }));
-        console.log("Form condition updated successfully:", formData.condition);
-    };
-
-  // Handle image file selection
-  const handleFileChange = (event) => {
-    setImageFile(event.target.files[0]); // Store the selected file
   };
 
-  // Handle form submission
+  const setCondition = (condition) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      condition,
+    }));
+  };
+
+  const handleFileChange = (event) => {
+    const files = Array.from(event.target.files).slice(0, 2);
+    setImageFiles(files);
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setUploadError(""); // Reset error message
+    setUploadError("");
 
-    const formDataToSend = new FormData();
-    formDataToSend.append("title", formData.title);
-    formDataToSend.append("description", formData.description);
-    formDataToSend.append("condition", formData.condition);
+    const userID = localStorage.getItem("userID");
+    if (!userID) {
+      setUploadError("User not logged in. Please log in first.");
+      return;
+    }
 
-    if (imageFile) {
-      formDataToSend.append("image", imageFile); // Attach the image file
+    if (!formData.title || !formData.description || !formData.condition) {
+      setUploadError("Please fill out all required fields.");
+      return;
+    }
+
+    if (imageFiles.length < 2) {
+      setUploadError("Please upload two images.");
+      return;
     }
 
     try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("listUserID", userID);
+      formDataToSend.append("listDate", new Date().toISOString().split("T")[0]);
+      formDataToSend.append("listCategory", "1"); // You can replace with dynamic later
+      formDataToSend.append("listDescription", formData.description);
+      formDataToSend.append("listClaimDescription", formData.title);
+      formDataToSend.append("isClaimed", "0");
+      formDataToSend.append("listPicture", imageFiles[0]);
+      formDataToSend.append("listPicture2", imageFiles[1]);
+
       const response = await axios.post(
-        "http://127.0.0.1:8000/listings",
+        "http://127.0.0.1:8000/listings/create",
         formDataToSend,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
 
-      console.log("Form submitted successfully:", response.data);
-      alert("Listing created successfully!");
+      console.log("Listing submitted:", response.data);
+      alert("Listing submitted for admin approval!");
+      // Optional: reset form
+      setFormData({ title: "", description: "", condition: "" });
+      setImageFiles([]);
     } catch (error) {
-      setUploadError(error.response?.data?.detail || "Failed to submit listing.");
+      console.error("Full error:", error.response?.data);
+      const errorDetail = error.response?.data?.detail;
+
+      if (Array.isArray(errorDetail)) {
+        setUploadError(errorDetail.map((e) => e.msg).join(", "));
+      } else {
+        setUploadError(typeof errorDetail === "string" ? errorDetail : "Failed to submit listing.");
+      }
     }
   };
 
@@ -70,50 +96,64 @@ function ListerPage() {
           <div className="input-wrapper" style={{ display: "grid", gap: "15px" }}>
             <input
               type="text"
-              id="title_input"
               placeholder="Listing Title..."
               name="title"
               value={formData.title}
               onChange={handleChange}
               className="input"
+              required
             />
 
             <input
               type="text"
-              id="description_input"
               placeholder="Description..."
               name="description"
               value={formData.description}
               onChange={handleChange}
               className="input"
-                      />
-                      <div class="radio-inputs" style={{ justifyContent: "center" }}>
-            <p>Item Condition: </p>
-                <label class="radio">
-                    <input type="radio" name="condition" checked={formData.condition === "Used"} onChange={() => setCondition("Used")} />
-                        <span class="name">Used</span>
-                </label>
-                <label class="radio">
-                    <input type="radio" name="condition" checked={formData.condition === "Good"} onChange={() => setCondition("Good")} />
-                        <span class="name">Good</span>
-                </label>
+              required
+            />
 
-                <label class="radio">
-                    <input type="radio" name="condition" checked={formData.condition === "New"} onChange={() => setCondition("New")} />
-                        <span class="name">New</span>
+            <div className="radio-inputs" style={{ justifyContent: "center" }}>
+              <p>Item Condition: </p>
+              {["Used", "Good", "New"].map((option) => (
+                <label key={option} className="radio">
+                  <input
+                    type="radio"
+                    name="condition"
+                    checked={formData.condition === option}
+                    onChange={() => setCondition(option)}
+                  />
+                  <span className="name">{option}</span>
                 </label>
+              ))}
             </div>
 
-            {/* Image Upload Input */}
+            <label htmlFor="image_input">Upload 2 images:</label>
             <input
               type="file"
               id="image_input"
               accept="image/*"
+              multiple
               onChange={handleFileChange}
               className="input"
+              required
             />
 
-            {/* Error Message Display */}
+            {/* Optional Image Previews */}
+            <div className="preview" style={{ display: "flex", gap: "10px" }}>
+              {imageFiles.map((file, index) => (
+                <img
+                  key={index}
+                  src={URL.createObjectURL(file)}
+                  alt={`preview-${index}`}
+                  width="100"
+                  height="100"
+                  style={{ objectFit: "cover", borderRadius: "8px" }}
+                />
+              ))}
+            </div>
+
             {uploadError && <p className="error-message">{uploadError}</p>}
 
             <div style={{ justifySelf: "center" }}>
