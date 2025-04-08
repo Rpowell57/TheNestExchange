@@ -15,40 +15,54 @@ from pydantic import BaseModel
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 from dotenv import load_dotenv
 from database import upload_image_to_blob
-
+app = FastAPI()
 # Load environment variables
 load_dotenv()
 
 # Retrieve Azure Storage variables
-AZURE_STORAGE_SAS_URL = os.getenv("AZURE_STORAGE_SAS_URL")
+AZURE_STORAGE_ACCOUNT_NAME = os.getenv("AZURE_STORAGE_ACCOUNT_NAME")
+AZURE_STORAGE_SAS_TOKEN = os.getenv("AZURE_STORAGE_SAS_TOKEN")
 AZURE_STORAGE_CONTAINER_NAME = os.getenv("AZURE_STORAGE_CONTAINER_NAME")
 
-if not AZURE_STORAGE_SAS_URL:
-    raise ValueError("AZURE_STORAGE_SAS_URL is not set. Check your .env file.")
+if not AZURE_STORAGE_ACCOUNT_NAME or not AZURE_STORAGE_SAS_TOKEN or not AZURE_STORAGE_CONTAINER_NAME:
+    raise ValueError("Azure storage details not set. Check your .env file.")
 
 # Initialize Blob Service Client using SAS URL
-blob_service_client = BlobServiceClient(account_url=AZURE_STORAGE_SAS_URL)
+account_url = f"https://{AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
+blob_service_client = BlobServiceClient(account_url=account_url, credential=AZURE_STORAGE_SAS_TOKEN)
+
 
 def upload_image_to_blob(file, filename):
     try:
-        # Initialize the BlobClient using the container and blob name
-        blob_client = blob_service_client.get_blob_client(container=AZURE_STORAGE_CONTAINER_NAME, blob=filename)
+        # Initialize BlobClient using container name and blob filename
+        blob_client = blob_service_client.get_blob_client(
+            container=AZURE_STORAGE_CONTAINER_NAME, blob=filename)
 
-        # If file is already a byte object, just upload it directly
-        if isinstance(file, bytes):
-            blob_client.upload_blob(file, overwrite=True)
-        else:
-            # If file is a file-like object, you can use .read() to get the bytes
-            blob_client.upload_blob(file.read(), overwrite=True)
+        # Upload the file to the blob storage
+        blob_client.upload_blob(file, overwrite=True)
         
-        # Return the full URL for the uploaded blob
-        return f"https://nextexchangeblob.blob.core.windows.net/{AZURE_STORAGE_CONTAINER_NAME}/{filename}"
+        # Return the URL of the uploaded blob
+        return f"https://{AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_STORAGE_CONTAINER_NAME}/{filename}"
 
     except Exception as e:
         print(f"Error uploading to Azure Blob: {e}")
         return None
 
+@app.post("/upload-image/")
+async def upload_image(file: UploadFile = File(...)):
+    try:
+        # Read file and generate filename
+        file_data = await file.read()
+        filename = file.filename
 
+        # Upload image to Azure Blob and get the URL
+        image_url = upload_image_to_blob(file_data, filename)
+        if image_url:
+            return {"image_url": image_url}
+        else:
+            raise HTTPException(status_code=500, detail="Image upload failed.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {e}")
 
 # Redis Configuration
 REDIS_HOST = os.getenv("REDIS_HOST")
@@ -73,16 +87,6 @@ def test_redis():
         print(f"Redis connection failed: {e}")
 
 test_redis()
-
-app = FastAPI()
-
-@app.post("/upload-image/")
-async def upload_image(file: UploadFile = File(...)):
-    image_url = upload_image_to_blob(file.file, file.filename)
-    if image_url:
-        return {"image_url": image_url}
-    else:
-        raise HTTPException(status_code=500, detail="Image upload failed.")
 
 # Define allowed origins for security
 origins = [
@@ -193,12 +197,12 @@ async def create_listing(
         # Read and upload image 1
         picture_data = await listPicture.read()
         picture_filename = f"{uuid.uuid4()}{os.path.splitext(listPicture.filename)[1]}"
-        picture_url = upload_image_to_blob(picture_data, picture_filename)
+        picture_url = upload_image_to_blob(picture_data, picture_filename)  # Generate URL for the first image
 
         # Read and upload image 2
         picture2_data = await listPicture2.read()
         picture2_filename = f"{uuid.uuid4()}{os.path.splitext(listPicture2.filename)[1]}"
-        picture2_url = upload_image_to_blob(picture2_data, picture2_filename)
+        picture2_url = upload_image_to_blob(picture2_data, picture2_filename)  # Generate URL for the second image
 
         # Insert into database
         query = text(""" 
@@ -219,7 +223,7 @@ async def create_listing(
         })
         db.commit()
 
-        # Invalidate cache
+        # Invalidate cache to refresh listings
         redis_client.delete("listings:all")
 
         return {
@@ -231,6 +235,7 @@ async def create_listing(
     except Exception as e:
         print(f"Error creating listing: {e}")
         raise HTTPException(status_code=500, detail="Error creating listing")
+
 
 
 @app.post("/test/upload-image")

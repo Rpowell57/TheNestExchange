@@ -4,31 +4,25 @@
     background-color: #fafafa;
     min-height: 100vh;
     position: relative;
-    padding-top: 80px; /* Pushes content below navbar */
+    padding-top: 80px;
 }
 
 /* Hero Section */
 .hero-section {
-    position: relative; /* Changed from fixed */
-    top: 0; /* Reset */
-    left: 0; /* Reset */
-    transform: none; /* Remove unnecessary centering */
+    position: relative;
     width: 100%;
     max-width: 800px;
     text-align: center;
-    z-index: 10; /* Lower z-index */
+    z-index: 10;
     background: linear-gradient(135deg, #f4f4f4, #e8e8e8);
     padding: 30px 20px;
     border-radius: 12px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    margin-top: 100px; /* Push below navbar */
+    margin-top: 100px;
 }
 
+/* Claimer Box */
 .claimer-box {
-    position: relative; /* Changed from fixed */
-    top: 0; /* Reset */
-    left: 0; /* Reset */
-    transform: none;
     text-align: center;
     width: 100%;
     max-width: 800px;
@@ -37,36 +31,41 @@
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    margin-top: 20px; /* Small spacing */
+    margin-top: 20px;
 }
 
-
+/* Listings Section */
 .listings-section {
-    margin-top: 50px; /* Ensures it doesn't overlap with fixed header */
+    margin-top: 50px;
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 equal columns */
-    gap:50px; /* Adds spacing between listings */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Responsively adjust */
+    gap: 20px;
     justify-content: center;
     width: 100%;
-    max-width: 960px; /* Adjust width to fit three listings comfortably */
+    max-width: 960px;
     margin-left: auto;
     margin-right: auto;
 }
 
-/* Ensure listings maintain a uniform size */
 .listing-card {
     background: white;
     border-radius: 12px;
     padding: 20px;
-    width: 100%; /* Ensures they fill the grid cell */
-    max-width: 300px; /* Limits max size */
+    width: 100%;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     border: 2px solid black;
+    cursor: pointer;
 }
 
+.listing-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Hero Section Styling */
 .hero-section h1 {
-    font-size: 42px;
+    font-size: 36px;
     font-weight: bold;
     color: #222;
 }
@@ -77,12 +76,6 @@
     max-width: 700px;
     margin: 10px auto;
     line-height: 1.6;
-}
-
-
-.listing-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 .listing-card h3 {
@@ -97,18 +90,16 @@
     line-height: 1.5;
 }
 
-
 /* Listing Images */
 .listing-image {
     width: 100%;
     height: auto;
     border-radius: 10px;
     object-fit: cover;
-    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
     margin-top: 10px;
 }
 
-/* Claim Button */
+/* Buttons */
 .claim-button {
     display: inline-block;
     padding: 12px 24px;
@@ -117,12 +108,12 @@
     font-weight: bold;
     border-radius: 6px;
     text-decoration: none;
-    transition: all 0.3s ease;
     background-color: #E2C116;
     color: black;
     border: none;
     cursor: pointer;
     box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
 }
 
 .claim-button:hover {
@@ -130,24 +121,7 @@
     box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.15);
 }
 
-/* Claim Status Message */
-.claim-status {
-    margin-top: 20px;
-    font-size: 18px;
-    color: #28a745;
-    font-weight: bold;
-    text-align: center;
-}
-
-/* Error & Loading Messages */
-.error-message {
-    color: #ff4d4d;
-    font-size: 18px;
-    text-align: center;
-    margin-top: 20px;
-    font-weight: bold;
-}
-
+.error-message,
 .loading-message {
     color: #ff9900;
     font-size: 18px;
@@ -156,7 +130,6 @@
     font-weight: bold;
 }
 
-/* Input Field Styling */
 .input-wrapper input {
     background-color: #eee;
     border: none;
@@ -177,13 +150,8 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .hero-section {
-        padding: 40px 15px;
-    }
-
     .listing-card {
-        width: 100%;
-        max-width: 360px;
+        max-width: 100%;
     }
 
     .claim-button {

@@ -6,6 +6,8 @@ import ClaimerPage from './ClaimerPage';
 import Login from './login';
 import HomePage from './HomePage';
 import Register from './register';
+import ListingDetailsPage from "./ListingDetailsPage";
+
 function App() {
   return (
       <div className="App">
@@ -19,6 +21,7 @@ function App() {
                 <Route path="/ClaimerPage" element={<ClaimerPage />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/listing/:id" element={<ListingDetailsPage />} /> {/* Updated route for listing details */}
               </Routes>
           </BrowserRouter>
       </div>

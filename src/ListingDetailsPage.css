@@ -1,0 +1,111 @@
+.listing-details-container {
+    text-align: center;
+    padding: 50px 20px;
+    background-color: #fafafa;
+    min-height: 100vh;
+    position: relative;
+    padding-top: 80px;
+}
+
+.listing-details-container h1 {
+    font-size: 36px;
+    font-weight: bold;
+    color: #222;
+    margin-bottom: 20px;
+}
+
+.listing-details-container p {
+    font-size: 18px;
+    color: #555;
+    max-width: 800px;
+    margin: 10px auto;
+    line-height: 1.6;
+}
+
+.listing-images {
+    margin-top: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.listing-image-large {
+    width: 300px;
+    height: 200px;
+    object-fit: cover;
+    margin: 10px;
+    border-radius: 10px;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.claim-button {
+    display: inline-block;
+    padding: 12px 24px;
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 6px;
+    text-decoration: none;
+    background-color: #E2C116;
+    color: black;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.claim-button:hover {
+    background-color: #c4a114;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.15);
+}
+
+.error-message {
+    color: #ff4d4d;
+    font-size: 18px;
+    text-align: center;
+    margin-top: 20px;
+    font-weight: bold;
+}
+
+.loading-message {
+    color: #ff9900;
+    font-size: 18px;
+    text-align: center;
+    margin-top: 20px;
+    font-weight: bold;
+}
+
+.back-button {
+    display: inline-block;
+    padding: 12px 24px;
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 6px;
+    text-decoration: none;
+    background-color: #ccc;
+    color: black;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.back-button:hover {
+    background-color: #aaa;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .listing-image-large {
+        width: 100%;
+        max-width: 350px;
+        height: 250px;
+    }
+
+    .claim-button,
+    .back-button {
+        width: 100%;
+    }
+}
