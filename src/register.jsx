@@ -68,11 +68,6 @@ export default function Register() {
                         <input type="password" className="form-control" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                     </div>
                     <div className="form-group">
-                        <label>
-                            <input type="checkbox" checked={isAdmin} onChange={() => setIsAdmin(isAdmin ? 0 : 1)} /> Admin
-                        </label>
-                    </div>
-                    <div className="form-group">
                         <label htmlFor="firstName">First Name</label>
                         <input type="text" className="form-control" id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
                     </div>
@@ -82,9 +77,14 @@ export default function Register() {
                     </div>
                     <div className="form-group">
                         <label>
-                            <input type="checkbox" checked={isStudent} onChange={() => setIsStudent(isStudent ? 0 : 1)} /> Student
+                            <input type="checkbox" checked={isAdmin} onChange={() => setIsAdmin(isAdmin ? 0 : 1)} /> Admin
                         </label>
                     </div>
+                    <div className="form-group">
+                        <label>
+                            <input type="checkbox" checked={isStudent} onChange={() => setIsStudent(isStudent ? 0 : 1)} /> Student
+                        </label>
+                    </div> 
                     {error && <div className="alert alert-danger">{error}</div>}
                     {success && <div className="alert alert-success">{success}</div>}
                     <div className="button-group">
