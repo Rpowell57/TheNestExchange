@@ -87,13 +87,15 @@ function ListerPage() {
   };
 
   return (
-    <form onSubmit={handleSubmit} encType="multipart/form-data">
+      <form onSubmit={handleSubmit} encType="multipart/form-data">
+              <div class="background-image">
+          <div className="background-container">
       <div className="lister-container">
         <div className="hero-section">
           <h1>Create Listing</h1>
           <p>Create a listing to be claimed by users.</p>
-
-          <div className="input-wrapper" style={{ display: "grid", gap: "15px" }}>
+            <div className="input-wrapper">
+                          <div className="input-field">
             <input
               type="text"
               placeholder="Listing Title..."
@@ -104,7 +106,7 @@ function ListerPage() {
               required
             />
 
-            <input
+            <input 
               type="text"
               placeholder="Description..."
               name="description"
@@ -114,8 +116,10 @@ function ListerPage() {
               required
             />
 
+                          </div>
             <div className="radio-inputs" style={{ justifyContent: "center" }}>
-              <p>Item Condition: </p>
+                <p>Describe Item Condition:</p>
+
               {["Used", "Good", "New"].map((option) => (
                 <label key={option} className="radio">
                   <input
@@ -164,6 +168,8 @@ function ListerPage() {
           </div>
         </div>
       </div>
+    </div>
+    </div>
     </form>
   );
 }
