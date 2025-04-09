@@ -32,14 +32,15 @@ body {
     cursor: pointer;
     gap: 50px;
 }
+
 .input-field {
-    width: 100%; /* Makes input stretch to fill container */
-    padding: 1px; /* Optional: adds internal spacing */
-    font-size: 1rem; /* Makes input text readable */
-    box-sizing: border-box; /* Ensures padding doesn't break layout */
+    width: 100%;
+    padding: 1px;
+    font-size: 1rem;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    align-items: center; /* centers children horizontally */
+    align-items: center;
     gap: 20px;
     margin: 0 auto;
 }
