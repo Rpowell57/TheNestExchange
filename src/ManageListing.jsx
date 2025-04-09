@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import "./ClaimerPage.css";
+import "./ManageListing.css";
 
 export default function ManageListing() {
   const [listings, setListings] = useState([]);

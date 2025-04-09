@@ -53,7 +53,7 @@ async def upload_image(file: UploadFile = File(...)):
     try:
         # Read file and generate filename
         file_data = await file.read()
-        filename = file.filename
+        filename = f"{uuid.uuid4()}{os.path.splitext(file.filename)[1]}"
 
         # Upload image to Azure Blob and get the URL
         image_url = upload_image_to_blob(file_data, filename)
@@ -324,7 +324,7 @@ def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
 @app.post("/listings/delete")
 def delete_listing(listID: int = Form(...), db: Session = Depends(get_db)):
     try:
-        query = text("EXEC deleteApproveListing :listID")
+        query = text("EXEC deleteApprovedListing :listID")
         db.execute(query, {"listID": listID})
         db.commit()
 
@@ -402,7 +402,7 @@ def get_listings(db: Session = Depends(get_db)):
                 SELECT id, listUserID, listDate, listCategory, listDescription, 
                        listClaimDescription, isClaimed, listPicture, listPicture2 
                 FROM ListingTable
-                WHERE isClaimed = 1  -- Only fetch approved listings
+                WHERE isClaimed !=0  -- Only fetch approved listings
             """)
             result = db.execute(query).fetchall()
 
