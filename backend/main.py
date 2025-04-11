@@ -53,7 +53,7 @@ async def upload_image(file: UploadFile = File(...)):
     try:
         # Read file and generate filename
         file_data = await file.read()
-        filename = file.filename
+        filename = f"{uuid.uuid4()}{os.path.splitext(file.filename)[1]}"
 
         # Upload image to Azure Blob and get the URL
         image_url = upload_image_to_blob(file_data, filename)
@@ -183,12 +183,12 @@ threading.Thread(target=open_browser).start()
 
 @app.post("/listings/create")
 async def create_listing(
-    listUserID: str,
-    listDate: str,
-    listCategory: int,
-    listDescription: str,
-    listClaimDescription: str,
-    isClaimed: int,
+    listUserID: str= Form(...),
+    listDate: str= Form(...),
+    listCategory: int = Form(...),
+    listDescription: str= Form(...),
+    listClaimDescription: str = Form(...),
+    isClaimed: int = Form(...),
     listPicture: UploadFile = File(...),
     listPicture2: UploadFile = File(...),
     db: Session = Depends(get_db)
@@ -257,6 +257,35 @@ async def test_image_upload(image: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/listings/pending")
+def get_pending_listings(db: Session = Depends(get_db)):
+    try:
+        query = text("""
+            SELECT id, listUserID, listDate, listCategory, listDescription, 
+                   listClaimDescription, isClaimed, listPicture, listPicture2 
+            FROM ListingTable
+            WHERE isClaimed = 0  -- Pending approval
+        """)
+        result = db.execute(query).fetchall()
+
+        listings = [
+            {
+                "id": row.id,
+                "listUserID": row.listUserID,
+                "listDate": row.listDate.strftime("%Y-%m-%d"),
+                "listCategory": row.listCategory,
+                "listDescription": row.listDescription,
+                "listClaimDescription": row.listClaimDescription,
+                "isClaimed": row.isClaimed,
+                "listPicture": row.listPicture,
+                "listPicture2": row.listPicture2,
+            }
+            for row in result
+        ]
+
+        return listings
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 #Listing approve
@@ -373,7 +402,7 @@ def get_listings(db: Session = Depends(get_db)):
                 SELECT id, listUserID, listDate, listCategory, listDescription, 
                        listClaimDescription, isClaimed, listPicture, listPicture2 
                 FROM ListingTable
-                WHERE isClaimed = 1  -- Only fetch approved listings
+                WHERE isClaimed !=0  -- Only fetch approved listings
             """)
             result = db.execute(query).fetchall()
 
@@ -407,5 +436,13 @@ def get_listings(db: Session = Depends(get_db)):
         except Exception as e:
             print(f"Error fetching listings: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+@app.get("/users/check-admin")
+def check_if_admin(userID: str, db: Session = Depends(get_db)):
+    try:
+        query = text("SELECT userIsAdmin FROM Users WHERE userID = :userID")
+        result = db.execute(query, {"userID": userID}).fetchone()
+        return {"isAdmin": result[0] == 1 if result else False}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 

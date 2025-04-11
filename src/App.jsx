@@ -8,6 +8,8 @@ import HomePage from './HomePage';
 import Register from './register';
 import ListingDetailsPage from "./ListingDetailsPage";
 
+import Admin from './Admin';
+import ManageListing from './ManageListing';
 function App() {
   return (
       <div className="App">
@@ -22,6 +24,8 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/listing/:id" element={<ListingDetailsPage />} /> {/* Updated route for listing details */}
+                <Route path="/Admin" element={<Admin />} />
+                <Route path="/ManageListing" element={<ManageListing />} />
               </Routes>
           </BrowserRouter>
       </div>
