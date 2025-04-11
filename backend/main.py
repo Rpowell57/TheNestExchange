@@ -295,7 +295,7 @@ def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
 @app.post("/listings/delete")
 def delete_listing(listID: int = Form(...), db: Session = Depends(get_db)):
     try:
-        query = text("EXEC deleteApproveListing :listID")
+        query = text("EXEC delteApprovedListing :listID")
         db.execute(query, {"listID": listID})
         db.commit()
 
