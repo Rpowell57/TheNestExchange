@@ -13,7 +13,7 @@ export default function AdminDashboard() {
 
   const fetchPendingListings = async () => {
     try {
-      const response = await axios.get("http://127.0.0.1:8000/listings/pending");
+      const response = await axios.get("http://127.0.0.1:8000/api/listings/pending");
       console.log("Pending Listings from API:", response.data);
       setPendingListings(response.data);
     } catch (error) {
@@ -25,15 +25,14 @@ export default function AdminDashboard() {
     try {
       const url =
         action === "approve"
-          ? "http://127.0.0.1:8000/listings/approve"
-          : "http://127.0.0.1:8000/listings/reject";
+          ? "http://127.0.0.1:8000/api/listings/approve"
+          : "http://127.0.0.1:8000/api/listings/reject";
 
       const form = new FormData();
       form.append("listID", id);
 
       await axios.post(url, form);
-     
-      navigate("/ManageListing");
+      fetchPendingListings(); // Refresh the pending listings
     } catch (error) {
       console.error(`Failed to ${action} listing:`, error);
     }
@@ -45,7 +44,7 @@ export default function AdminDashboard() {
         <h1>Admin Dashboard</h1>
         <p>Review and approve or reject listings submitted by users.</p>
       </div>
-      
+
       <div className="listings-section">
         {pendingListings.length === 0 ? (
           <p>No pending listings.</p>
@@ -55,7 +54,6 @@ export default function AdminDashboard() {
               <h3>{listing.listDescription}</h3>
               <p><strong>By:</strong> {listing.listUserID}</p>
               <p><strong>Category:</strong> {listing.listCategory}</p>
-              
               <ListingImageSlider images={[listing.listPicture, listing.listPicture2]} />
 
               <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginTop: "15px" }}>
@@ -69,6 +67,7 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
 function ListingImageSlider({ images }) {
   const [currentImage, setCurrentImage] = useState(0);
 

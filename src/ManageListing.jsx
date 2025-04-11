@@ -11,7 +11,7 @@ export default function ManageListing() {
 
   const fetchListings = async () => {
     try {
-      const response = await axios.get("http://127.0.0.1:8000/listings");
+      const response = await axios.get("http://127.0.0.1:8000/api/listings");
       setListings(response.data);
     } catch (error) {
       console.error("Failed to fetch listings:", error);
@@ -20,14 +20,19 @@ export default function ManageListing() {
 
   const handleDelete = async (id) => {
     try {
-      const form = new FormData();
-      form.append("listID", id);
-      await axios.post("http://127.0.0.1:8000/listings/delete", form);
-      fetchListings();
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/listings/delete", 
+        { listID: id }, 
+        { headers: { "Content-Type": "application/json" } } 
+      );
+      if (response.data.message === "The listing has been deleted.") {
+        fetchListings(); 
+      }
     } catch (error) {
       console.error("Delete failed:", error);
     }
   };
+  
 
   return (
     <div className="claimer-container">
@@ -67,4 +72,3 @@ export default function ManageListing() {
     </div>
   );
 }
-

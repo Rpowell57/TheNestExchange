@@ -5,8 +5,10 @@ import threading
 import json
 import uuid
 import traceback
+from fastapi import Body
+from models import Listing
 from azure.core.exceptions import AzureError
-from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form, APIRouter
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 from database import get_db
@@ -18,6 +20,8 @@ from database import upload_image_to_blob
 app = FastAPI()
 # Load environment variables
 load_dotenv()
+router = APIRouter()
+
 
 # Retrieve Azure Storage variables
 AZURE_STORAGE_ACCOUNT_NAME = os.getenv("AZURE_STORAGE_ACCOUNT_NAME")
@@ -257,7 +261,12 @@ async def test_image_upload(image: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/listings/pending")
+from fastapi import APIRouter
+
+# Create a router
+router = APIRouter()
+
+@router.get("/listings/pending")
 def get_pending_listings(db: Session = Depends(get_db)):
     try:
         query = text("""
@@ -288,56 +297,51 @@ def get_pending_listings(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-#Listing approve
-@app.post("/listings/approve")
+
+@router.post("/listings/approve")
 def approve_listing(listID: int = Form(...), db: Session = Depends(get_db)):
-    try:
-        query = text("EXEC approveListing :listID")
-        db.execute(query, {"listID": listID})
-        db.commit()
+    print(f"Approving listing with ID {listID}")
+    listing = db.query(Listing).filter(Listing.id == listID).first()
+    if listing is None:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    listing.isClaimed = True
+    db.commit()
+    return {"message": "Listing has been approved!"}
 
-        # Remove cached listings to refresh data
-        redis_client.delete("listings:all")
-
-        return {"message": "The listing has been approved!"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-  
-
-#Listing Reject
-@app.post("/listings/reject")
+@router.post("/listings/reject")
 def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
+    print(f"Rejecting listing ID: {listID}")
+
     try:
-        query = text("EXEC dontApproveListing :listID")
-        db.execute(query, {"listID": listID})
-        db.commit()
-
-        # Remove cached listings
-        redis_client.delete("listings:all")
-
-        return {"message": "The listing has been rejected."}
+        # Manual fallback to test
+        listing = db.query(Listing).filter(Listing.id == listID).first()
+        if listing:
+            db.delete(listing)
+            db.commit()
+            redis_client.delete("listings:all")
+            return {"message": "Listing manually deleted as test."}
+        else:
+            return {"message": "Listing not found"}
     except Exception as e:
+        print(f"Reject error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-   
 
-#Listing Delete
-@app.post("/listings/delete")
-def delete_listing(listID: int = Form(...), db: Session = Depends(get_db)):
+
+
+
+@router.post("/listings/delete")
+def delete_listing(listID: int = Body(...), db: Session = Depends(get_db)):
     try:
         query = text("EXEC delteApprovedListing :listID")
         db.execute(query, {"listID": listID})
         db.commit()
-
-        # Invalidate cache after deleting a listing
         redis_client.delete("listings:all")
-
         return {"message": "The listing has been deleted."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-#Claiming listings
-@app.post("/claim/{listing_id}")
+@router.post("/claim/{listing_id}")
 def claim_listing(
     listing_id: int,
     claimedUserID: str = Form(...),
@@ -355,7 +359,6 @@ def claim_listing(
         })
         db.commit()
 
-        # Invalidate cache
         redis_client.delete("listings:all")
 
         return {"message": "Item has been successfully claimed!"}
@@ -382,7 +385,7 @@ def sell_item(
     return{"Message": "This Item has been marked as sold/claimed!"}
 from datetime import date
 
-@app.get("/listings")
+@router.get("/listings")
 def get_listings(db: Session = Depends(get_db)):
     cache_key = "listings:all"
     cached_listings = redis_client.get(cache_key)
@@ -436,6 +439,9 @@ def get_listings(db: Session = Depends(get_db)):
         except Exception as e:
             print(f"Error fetching listings: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+
+app.include_router(router, prefix="/api")
+
 @app.get("/users/check-admin")
 def check_if_admin(userID: str, db: Session = Depends(get_db)):
     try:
