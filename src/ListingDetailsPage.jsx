@@ -69,20 +69,9 @@ export default function ListingDetailsPage() {
             <div>
               <strong>Images:</strong>
               <div>
-                {listing.listPicture && (
-                  <img
-                    src={listing.listPicture}
-                    alt="Listing Image 1"
-                    className="listing-image-large"
-                    onError={(e) => e.target.src = '/path/to/fallback-image.jpg'}
-                  />
-                )}
-                {listing.listPicture2 && (
-                  <img
-                    src={listing.listPicture2}
-                    alt="Listing Image 2"
-                    className="listing-image-large"
-                    onError={(e) => e.target.src = '/path/to/fallback-image.jpg'}
+              {(listing.listPicture || listing.listPicture2) && (
+                  <ListingImageSlider
+                    images={[listing.listPicture, listing.listPicture2].filter(Boolean)}
                   />
                 )}
               </div>
@@ -96,6 +85,27 @@ export default function ListingDetailsPage() {
           </div>
         )
       )}
+    </div>
+  );
+}
+function ListingImageSlider({ images }) {
+  const [currentImage, setCurrentImage] = useState(0);
+
+  const nextImage = () => {
+    setCurrentImage((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  return (
+    <div className="image-slider">
+      <img src={images[currentImage]} alt="listing" className="listing-image-large" />
+      <div className="slider-controls">
+        <button onClick={prevImage} className="slider-btn">‹</button>
+        <button onClick={nextImage} className="slider-btn">›</button>
+      </div>
     </div>
   );
 }
