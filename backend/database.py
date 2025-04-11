@@ -207,7 +207,7 @@ def delete_approved_listing(listID):
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC deleteApprovedListing ?", listID)
+            cursor.execute("EXEC delteApprovedListing ?", listID)
             conn.commit()
             print("Listing has been successfully deleted!")
     except Exception as e:
