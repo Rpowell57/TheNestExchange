@@ -44,19 +44,9 @@ export default function ManageListing() {
             <p>Posted by: {listing.listUserID}</p>
             <p>Approved: {listing.isClaimed ? "Yes" : "No"}</p>
 
-            {listing.listPicture && (
-              <img
-                className="listing-image"
-                src={listing.listPicture}
-                alt="Listing Preview"
-              />
-            )}
-
-            {listing.listPicture2 && (
-              <img
-                className="listing-image"
-                src={listing.listPicture2}
-                alt="Listing Preview 2"
+            {(listing.listPicture || listing.listPicture2) && (
+              <ListingImageSlider
+                images={[listing.listPicture, listing.listPicture2].filter(Boolean)}
               />
             )}
 
@@ -68,6 +58,27 @@ export default function ManageListing() {
             </button>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+function ListingImageSlider({ images }) {
+  const [currentImage, setCurrentImage] = useState(0);
+
+  const nextImage = () => {
+    setCurrentImage((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  return (
+    <div className="image-slider">
+      <img src={images[currentImage]} alt="listing" className="listing-image" />
+      <div className="slider-controls">
+        <button onClick={prevImage} className="slider-btn">‹</button>
+        <button onClick={nextImage} className="slider-btn">›</button>
       </div>
     </div>
   );

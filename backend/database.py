@@ -20,7 +20,7 @@ redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, 
 
 # Load environment variables
 AZURE_STORAGE_SAS_URL = os.getenv("AZURE_STORAGE_SAS_URL") 
-AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")  
+AZURE_CONTAINER_NAME = os.getenv("AZURE_STORAGE_CONTAINER_NAME")  
 
 # Initialize BlobServiceClient using the SAS URL
 account_url = f"https://{os.getenv('AZURE_STORAGE_ACCOUNT_NAME')}.blob.core.windows.net"
@@ -37,7 +37,7 @@ def upload_image_to_blob(image_file, filename):
         blob_client.upload_blob(image_file, overwrite=True)
 
         # Return the URL of the uploaded file
-        return f"https://nextexchangeblob.blob.core.windows.net/{AZURE_STORAGE_CONTAINER_NAME}/{filename}"
+        return f"https://nextexchangeblob.blob.core.windows.net/{AZURE_CONTAINER_NAME}/{filename}"
     
     except Exception as e:
         print(f"Error uploading image: {e}")

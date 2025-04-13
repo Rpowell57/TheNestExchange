@@ -51,6 +51,7 @@ def upload_image_to_blob(file, filename):
     except Exception as e:
         print(f"Error uploading to Azure Blob: {e}")
         return None
+    
 
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
@@ -405,7 +406,7 @@ def get_listings(db: Session = Depends(get_db)):
                 SELECT id, listUserID, listDate, listCategory, listDescription, 
                        listClaimDescription, isClaimed, listPicture, listPicture2 
                 FROM ListingTable
-                WHERE isClaimed !=0  -- Only fetch approved listings
+                WHERE isClaimed = 1  -- Only fetch approved listings
             """)
             result = db.execute(query).fetchall()
 
@@ -425,15 +426,7 @@ def get_listings(db: Session = Depends(get_db)):
             ]
 
             # Cache only metadata, not the images
-            redis_client.setex(cache_key, 600, json.dumps([{
-                "id": listing["id"],
-                "listUserID": listing["listUserID"],
-                "listDate": listing["listDate"],
-                "listCategory": listing["listCategory"],
-                "listDescription": listing["listDescription"],
-                "listClaimDescription": listing["listClaimDescription"],
-                "isClaimed": listing["isClaimed"]
-            } for listing in listings]))  # Store as a valid JSON string
+            redis_client.setex(cache_key, 600, json.dumps(listings))  # Store as a valid JSON string
 
             return listings
         except Exception as e:
@@ -450,5 +443,7 @@ def check_if_admin(userID: str, db: Session = Depends(get_db)):
         return {"isAdmin": result[0] == 1 if result else False}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
 
 
