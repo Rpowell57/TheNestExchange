@@ -98,6 +98,8 @@ if (Array.isArray(updatedListings.data)) {
   };
 
   return (
+    <div class="background-image1">
+    <div className="background-container1">
     <div className="container claimer-container">
       <div className="claimer-box">
         <h1>Claim a Listing</h1>
@@ -139,10 +141,11 @@ if (Array.isArray(updatedListings.data)) {
       </div>
 
       {selectedListing && (
+        <div className="listing-holder">
         <div className="listing-details">
           <h2>Listing Details</h2>
           <p><strong>Description:</strong> {selectedListing.listDescription}</p>
-          <p><strong>Claim Description:</strong> {selectedListing.listClaimDescription}</p>
+          <p><strong>Claim Location:</strong> {selectedListing.listClaimDescription}</p>
           {(selectedListing.listPicture || selectedListing.listPicture2) && (
             <ListingImageSlider
               images={[selectedListing.listPicture, selectedListing.listPicture2].filter(Boolean)}
@@ -156,7 +159,10 @@ if (Array.isArray(updatedListings.data)) {
             Close
           </button>
         </div>
+        </div>
       )}
+    </div>
+    </div>
     </div>
   );
 }
