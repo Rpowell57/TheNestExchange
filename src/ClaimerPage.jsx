@@ -33,7 +33,7 @@ export default function ClaimerPage() {
     try {
       // Make a POST request to the server to claim the listing
       const response = await axios.post(
-          `http://127.0.0.1:8000/claim/${listingId}`,
+          `http://127.0.0.1:8000/listings/claim`,
           { userId: localStorage.getItem("userID") } // Pass the user ID in the request body
       );
 
