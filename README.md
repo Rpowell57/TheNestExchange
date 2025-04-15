@@ -24,6 +24,7 @@ cd your-project-folder
 
 # 2. Create & activate a virtual environment
 python -m venv venv
+
 venv\Scripts\Activate   # (Windows)
 # OR
 source venv/bin/activate   # (Mac/Linux)
