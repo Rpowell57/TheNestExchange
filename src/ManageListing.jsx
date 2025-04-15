@@ -18,28 +18,29 @@ export default function ManageListing() {
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/listings/delete", 
-        { listID: id }, 
-        { headers: { "Content-Type": "application/json" } } 
-      );
-      if (response.data.message === "The listing has been deleted.") {
-        fetchListings(); 
-      }
-    } catch (error) {
-      console.error("Delete failed:", error);
+  const handleDelete = (listID) => {
+    console.log("Deleting listing with ID:", listID); 
+    if (listID) {
+      axios.delete(`http://127.0.0.1:8000/api/listings/${listID}`)
+        .then(response => {
+          console.log("Delete successful:", response);
+          // Optionally, remove the deleted listing from the UI
+          setListings(listings.filter(listing => listing.listID !== listID));
+        })
+        .catch(error => {
+          console.error("Delete failed:", error);
+        });
+    } else {
+      console.error("Listing ID is undefined or invalid.");
     }
   };
-  
 
   return (
     <div className="claimer-container">
       <h1 className="hero-section">Manage All Listings</h1>
       <div className="listings-section">
         {listings.map((listing) => (
-          <div key={listing.id} className="listing-card">
+          <div key={listing.listID} className="listing-card"> 
             <h3>{listing.listDescription}</h3>
             <p>Posted by: {listing.listUserID}</p>
             <p>Approved: {listing.isClaimed ? "Yes" : "No"}</p>
@@ -51,10 +52,10 @@ export default function ManageListing() {
             )}
 
             <button
-              className="claim-button"
-              onClick={() => handleDelete(listing.id)}
+              className="delete-button"
+              onClick={() => handleDelete(listing.listID)}  
             >
-              Delete
+              Delete 
             </button>
           </div>
         ))}
@@ -62,6 +63,7 @@ export default function ManageListing() {
     </div>
   );
 }
+
 function ListingImageSlider({ images }) {
   const [currentImage, setCurrentImage] = useState(0);
 

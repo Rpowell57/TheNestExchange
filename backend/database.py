@@ -3,6 +3,9 @@ import os
 import urllib.parse
 import redis
 import json
+from sqlalchemy import text 
+from datetime import date
+from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
@@ -14,7 +17,8 @@ load_dotenv()
 
 #Redis setup
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = os.getenv("REDIS_PORT", 6379)
+REDIS_PORT = os.getenv("REDIS_PORT", 6380)
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
 REDIS_DB = os.getenv("REDIS_DB", 0)
 redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
 
@@ -184,10 +188,14 @@ def approve_listing(listID):
             cursor = conn.cursor()
             cursor.execute("EXEC approveListing ?", listID)
             conn.commit()
-            redis_client.setex(f"listing:{listID}:approved", 3600, "True")  # Cache approval status
+
+          
+            redis_client.delete("listings:all")
+
             print("Listing has been successfully approved!")
     except Exception as e:
         print(f"Error approving listing: {e}")
+
 
 
 def reject_listing(listID):
@@ -237,3 +245,113 @@ def sell_item(soldListID, soldReview, soldRating):
             print("Item marked as sold successfully!")
     except Exception as e:
         print(f"Error selling item: {e}")
+
+def get_listings_for_user(listUserID):
+    try:
+        # Create a connection to the database
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            # Execute the stored procedure
+            cursor.execute("EXEC allListingsForSpecificUser ?", (listUserID,))
+            result = cursor.fetchall()
+
+            listings = [
+                {
+                    "alistID": row[0],
+                    "aListUserID": row[1],
+                    "aListDate": row[2].strftime("%Y-%m-%d") if isinstance(row[2], date) else row[2],
+                    "aListCategory": row[3],
+                    "aListClaimDescription": row[4],
+                    "aIsClaimed": row[5],
+                    "aListPicture": row[6],
+                    "aListPicture2": row[7],
+                    "aListdescription": row[8],
+                    "aListName": row[9]
+                }
+                for row in result
+            ]
+
+            return listings
+    except Exception as e:
+        print(f"Error fetching listings for user {listUserID}: {e}")
+        return None
+
+def all_sold_for_specific_user(db: Session, list_user_id: str):
+    try:
+        query = text("""
+            EXEC allSoldForSpecificUser :listUserID
+        """)
+        result = db.execute(query, {"listUserID": list_user_id}).fetchall()
+        
+        listings = [
+            {
+                "listID": row.listID,
+                "listUserID": row.listUserID,
+                "listDate": row.listDate.strftime("%Y-%m-%d") if isinstance(row.listDate, date) else row.listDate,
+                "listCategory": row.listCategory,
+                "listDescription": row.listDescription,
+                "listClaimDescription": row.listClaimDescription,
+                "isClaimed": row.isClaimed,
+                "listPicture": row.listPicture if row.listPicture else "",
+                "listPicture2": row.listPicture2 if row.listPicture2 else "",
+                "ListName": row.ListName
+            }
+            for row in result
+        ]
+        return listings
+    except Exception as e:
+        print(f"Error fetching sold listings for user {list_user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+def all_claimed_for_specific_user(db: Session, list_user_id: str):
+    try:
+        query = text("""
+            EXEC allClaimedForSpecificUser :listUserID
+        """)
+        result = db.execute(query, {"listUserID": list_user_id}).fetchall()
+        
+        listings = [
+            {
+                "listID": row.listID,
+                "listUserID": row.listUserID,
+                "listDate": row.listDate.strftime("%Y-%m-%d") if isinstance(row.listDate, date) else row.listDate,
+                "listCategory": row.listCategory,
+                "listDescription": row.listDescription,
+                "listClaimDescription": row.listClaimDescription,
+                "isClaimed": row.isClaimed,
+                "listPicture": row.listPicture if row.listPicture else "",
+                "listPicture2": row.listPicture2 if row.listPicture2 else "",
+                "ListName": row.ListName
+            }
+            for row in result
+        ]
+        return listings
+    except Exception as e:
+        print(f"Error fetching claimed listings for user {list_user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+def get_all_listings(db: Session):
+    try:
+        # Explicitly reference the dbo schema and the allListings view
+        query = text("SELECT * FROM dbo.allListings")
+        result = db.execute(query).fetchall()
+
+        listings = [
+            {
+                "listID": row.listID,
+                "listUserID": row.listUserID,
+                "listDate": row.listDate.strftime("%Y-%m-%d") if row.listDate and isinstance(row.listDate, date) else row.listDate,
+                "listCategory": row.listCategory,
+                "listDescription": row.listDescription,
+                "listClaimDescription": row.listClaimDescription,
+                "isClaimed": row.isClaimed,
+                "listPicture": row.listPicture if row.listPicture else "",
+                "listPicture2": row.listPicture2 if row.listPicture2 else "",
+                "ListName": row.ListName,
+            }
+            for row in result
+        ]
+        return listings
+    except Exception as e:
+        print(f"Error fetching all listings: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching listings from database")

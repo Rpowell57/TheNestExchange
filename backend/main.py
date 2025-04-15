@@ -5,13 +5,14 @@ import threading
 import json
 import uuid
 import traceback
+from datetime import date
 from fastapi import Body
-from models import Listing
 from azure.core.exceptions import AzureError
 from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form, APIRouter
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
-from database import get_db
+from sqlalchemy import text
+from database import get_db, newListing, get_all_listings
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
@@ -80,7 +81,10 @@ redis_client = redis.StrictRedis(
     port=REDIS_PORT,
     password=REDIS_PASSWORD,
     ssl=True,
-    decode_responses=True
+    decode_responses=True,
+    socket_timeout=5,                    
+    socket_connect_timeout=5,            
+    retry_on_timeout=True
 )
 
 # Test Redis Connection
@@ -199,45 +203,33 @@ async def create_listing(
     db: Session = Depends(get_db)
 ):
     try:
-        # Read and upload image 1
+        
         picture_data = await listPicture.read()
         picture_filename = f"{uuid.uuid4()}{os.path.splitext(listPicture.filename)[1]}"
-        picture_url = upload_image_to_blob(picture_data, picture_filename)  # Generate URL for the first image
-
-        # Read and upload image 2
+        picture_url = upload_image_to_blob(picture_data, picture_filename)  
+ 
         picture2_data = await listPicture2.read()
         picture2_filename = f"{uuid.uuid4()}{os.path.splitext(listPicture2.filename)[1]}"
-        picture2_url = upload_image_to_blob(picture2_data, picture2_filename)  # Generate URL for the second image
+        picture2_url = upload_image_to_blob(picture2_data, picture2_filename) 
 
-        # Insert into database
-        query = text(""" 
-            INSERT INTO ListingTable (listUserID, listDate, listCategory, listDescription, 
-                                      listClaimDescription, isClaimed, listPicture, listPicture2)
-            VALUES (:listUserID, :listDate, :listCategory, :listDescription, 
-                    :listClaimDescription, :isClaimed, :listPicture, :listPicture2)
-        """)
-        db.execute(query, {
-            "listUserID": listUserID,
-            "listDate": listDate,
-            "listCategory": listCategory,
-            "listDescription": listDescription,
-            "listClaimDescription": listClaimDescription,
-            "isClaimed": isClaimed,
-            "listPicture": picture_url,
-            "listPicture2": picture2_url
-        })
-        db.commit()
-
-        # Invalidate cache to refresh listings
+        newListing(
+        aListUser=listUserID,
+            alistname=listDate,  
+            listCategory=listCategory,
+            alistdescription=listDescription,
+            aListClaimDescription=listClaimDescription,
+            aIsClaimed=isClaimed,
+            aListPicture=picture_url,
+            alistPicture2=picture2_url
+       )
         redis_client.delete("listings:all")
-
         return {
             "message": "Listing created successfully",
             "listPicture": picture_url,
             "listPicture2": picture2_url
         }
-
     except Exception as e:
+        traceback.print_exc()
         print(f"Error creating listing: {e}")
         raise HTTPException(status_code=500, detail="Error creating listing")
 
@@ -246,13 +238,11 @@ async def create_listing(
 @app.post("/test/upload-image")
 async def test_image_upload(image: UploadFile = File(...)):
     try:
-        # Read the image file content asynchronously
+        
         image_data = await image.read()
 
-        # Generate a filename for the image
         filename = image.filename
 
-        # Upload the image to Azure Blob Storage
         image_url = upload_image_to_blob(image_data, filename)
 
         if image_url:
@@ -271,76 +261,72 @@ router = APIRouter()
 def get_pending_listings(db: Session = Depends(get_db)):
     try:
         query = text("""
-            SELECT id, listUserID, listDate, listCategory, listDescription, 
-                   listClaimDescription, isClaimed, listPicture, listPicture2 
-            FROM ListingTable
-            WHERE isClaimed = 0  -- Pending approval
+            SELECT alistID, aListUserID, aListDate, aListCategory, aListdescription, 
+                   aListClaimDescription, aIsClaimed, aListPicture, aListPicture2 
+            FROM dbo.unaprovedListings  -- Correct table name with schema
+            WHERE aIsClaimed = 0  -- Pending approval
         """)
         result = db.execute(query).fetchall()
 
         listings = [
             {
-                "id": row.id,
-                "listUserID": row.listUserID,
-                "listDate": row.listDate.strftime("%Y-%m-%d"),
-                "listCategory": row.listCategory,
-                "listDescription": row.listDescription,
-                "listClaimDescription": row.listClaimDescription,
-                "isClaimed": row.isClaimed,
-                "listPicture": row.listPicture,
-                "listPicture2": row.listPicture2,
+                "id": row.alistID,
+                "listUserID": row.aListUserID,
+                "listDate": row.aListDate.strftime("%Y-%m-%d"),
+                "listCategory": row.aListCategory,
+                "listDescription": row.aListdescription,
+                "listClaimDescription": row.aListClaimDescription,
+                "isClaimed": row.aIsClaimed,
+                "listPicture": row.aListPicture,
+                "listPicture2": row.aListPicture2,
             }
             for row in result
         ]
-
         return listings
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-
 @router.post("/listings/approve")
 def approve_listing(listID: int = Form(...), db: Session = Depends(get_db)):
-    print(f"Approving listing with ID {listID}")
-    listing = db.query(Listing).filter(Listing.id == listID).first()
-    if listing is None:
-        raise HTTPException(status_code=404, detail="Listing not found")
-    
-    listing.isClaimed = True
-    db.commit()
-    return {"message": "Listing has been approved!"}
+    try:
+        query = text("EXEC approveListing :listID")
+        db.execute(query, {"listID": listID})
+        db.commit()
+
+        redis_client.setex(f"listing:{listID}:approved", 3600, "True")
+        return {"message": "Listing has been approved!"}
+    except Exception as e:
+        print(f"Error approving listing: {e}")
+        raise HTTPException(status_code=500, detail="Error approving listing")
 
 @router.post("/listings/reject")
 def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
-    print(f"Rejecting listing ID: {listID}")
-
     try:
-        # Manual fallback to test
-        listing = db.query(Listing).filter(Listing.id == listID).first()
-        if listing:
-            db.delete(listing)
-            db.commit()
-            redis_client.delete("listings:all")
-            return {"message": "Listing manually deleted as test."}
-        else:
-            return {"message": "Listing not found"}
+        query = text("EXEC dontApproveListing :listID")
+        db.execute(query, {"listID": listID})
+        db.commit()
+
+        redis_client.delete(f"listing:{listID}:approved")
+        return {"message": "Listing has been rejected!"}
     except Exception as e:
-        print(f"Reject error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error rejecting listing: {e}")
+        raise HTTPException(status_code=500, detail="Error rejecting listing")
 
-
-
-
-@router.post("/listings/delete")
-def delete_listing(listID: int = Body(...), db: Session = Depends(get_db)):
+@router.delete("/listings/{listID}")
+def delete_listing(listID: int, db: Session = Depends(get_db)):
     try:
         query = text("EXEC delteApprovedListing :listID")
         db.execute(query, {"listID": listID})
         db.commit()
-        redis_client.delete("listings:all")
-        return {"message": "The listing has been deleted."}
+
+        # Remove the listing from Redis cache
+        redis_client.delete(f"listing:{listID}")
+
+        return {"message": "Listing has been deleted."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error deleting listing: {e}")
+        raise HTTPException(status_code=500, detail="Error deleting listing")
+
 
 @router.post("/claim/{listing_id}")
 def claim_listing(
@@ -351,9 +337,9 @@ def claim_listing(
     db: Session = Depends(get_db)
 ):
     try:
-        query = text("EXEC claimItem :listing_id, :claimedUserID, :claimedReview, :claimedRating")
+        query = text("EXEC claimItem :claimListId, :claimedUserID, :claimedReview, :claimedRating")
         db.execute(query, {
-            "listing_id": listing_id,
+            "claimListId": listing_id,
             "claimedUserID": claimedUserID,
             "claimedReview": claimedReview,
             "claimedRating": claimedRating
@@ -361,33 +347,35 @@ def claim_listing(
         db.commit()
 
         redis_client.delete("listings:all")
-
         return {"message": "Item has been successfully claimed!"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error claiming item: {e}")
+        raise HTTPException(status_code=500, detail="Error claiming item")
 
 
-
-#Items marked as sold/claimed.
-@app.post("/listings/sell")
+@router.post("/listings/sell")
 def sell_item(
     soldListId: int = Form(...),
     soldReview: str = Form(...),
     soldRating: int = Form(...),
     db: Session = Depends(get_db)
 ):
-    query = text ("EXEC soldItem :soldListId, :soldReview, :soldRating")
-    db.execute(query,{
-        "soldListId": soldListId,
-        "soldReview": soldReview,
-        "soldRating": soldRating
-    })
-    db.commit()
-    return{"Message": "This Item has been marked as sold/claimed!"}
-from datetime import date
+    try:
+        query = text("EXEC soldItem :soldListId, :soldReview, :soldRating")
+        db.execute(query, {
+            "soldListId": soldListId,
+            "soldReview": soldReview,
+            "soldRating": soldRating
+        })
+        db.commit()
+
+        return {"Message": "Item marked as sold!"}
+    except Exception as e:
+        print(f"Error marking item as sold: {e}")
+        raise HTTPException(status_code=500, detail="Error marking item as sold")
 
 @router.get("/listings")
-def get_listings(db: Session = Depends(get_db)):
+def read_all_listings(db: Session = Depends(get_db)):
     cache_key = "listings:all"
     cached_listings = redis_client.get(cache_key)
 
@@ -398,40 +386,40 @@ def get_listings(db: Session = Depends(get_db)):
             return listings
         except json.JSONDecodeError:
             print("Error: Cached listings data is not valid JSON")
-            return []  # Return an empty list or handle the error gracefully
+            return []  #
     else:
         try:
-            # Adjust the query to filter only approved listings (e.g., isClaimed = 1)
-            query = text("""
-                SELECT id, listUserID, listDate, listCategory, listDescription, 
-                       listClaimDescription, isClaimed, listPicture, listPicture2 
-                FROM ListingTable
-                WHERE isClaimed = 1  -- Only fetch approved listings
-            """)
-            result = db.execute(query).fetchall()
-
-            listings = [
-                {
-                    "id": row.id,
-                    "listUserID": row.listUserID,
-                    "listDate": row.listDate.strftime("%Y-%m-%d") if isinstance(row.listDate, date) else row.listDate,
-                    "listCategory": row.listCategory,
-                    "listDescription": row.listDescription,
-                    "listClaimDescription": row.listClaimDescription,
-                    "isClaimed": row.isClaimed,
-                    "listPicture": row.listPicture if row.listPicture else "",
-                    "listPicture2": row.listPicture2 if row.listPicture2 else "",
-                }
-                for row in result
-            ]
-
-            # Cache only metadata, not the images
-            redis_client.setex(cache_key, 600, json.dumps(listings))  # Store as a valid JSON string
+            listings = get_all_listings(db)
+            redis_client.setex(cache_key, 600, json.dumps(listings))
 
             return listings
         except Exception as e:
             print(f"Error fetching listings: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/sold/{list_user_id}")
+def get_sold_items(list_user_id: str, db: Session = Depends(get_db)):
+    try:
+        sold_listings = all_sold_for_specific_user(db, list_user_id)
+        if not sold_listings:
+            raise HTTPException(status_code=404, detail="No sold items found for this user.")
+        return sold_listings
+    except Exception as e:
+        print(f"Error fetching sold listings: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+#
+@router.get("/claimed/{list_user_id}")
+def get_claimed_items(list_user_id: str, db: Session = Depends(get_db)):
+    try:
+        claimed_listings = all_claimed_for_specific_user(db, list_user_id)
+        if not claimed_listings:
+            raise HTTPException(status_code=404, detail="No claimed items found for this user.")
+        return claimed_listings
+    except Exception as e:
+        print(f"Error fetching claimed listings: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
 app.include_router(router, prefix="/api")
 

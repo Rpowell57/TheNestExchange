@@ -60,11 +60,6 @@ export default function ClaimerPage() {
   }, []);
 
   const handleClaim = async () => {
-    if (!selectedListing) {
-      setClaimError("No listing selected.");
-      return;
-    }
-
     try {
       const userId = localStorage.getItem("userID");
       if (!userId) {
@@ -72,26 +67,33 @@ export default function ClaimerPage() {
         return;
       }
 
-      const formData = new FormData();
-      formData.append("claimedUserID", userId);
-      formData.append("claimedReview", "Great item!");
-      formData.append("claimedRating", 5);
+      console.log("Selected Listing:", selectedListing); // Add a log to inspect the selected listing
+  
+      if (!selectedListing || !selectedListing.id) {
+        setClaimError("No listing selected.");
+        return;
+      }
 
       const response = await axios.post(
-        `http://127.0.0.1:8000/claim/${selectedListing.id}`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        `http://127.0.0.1:8000/api/claim/${selectedListing.id}`,
+        { user_id: parseInt(userId) }
       );
 
-      if (response.data.message === "Item has been successfully claimed!") {
+      if (response.status === 200) {
         setClaimError("");
         setSelectedListing(null);
-        fetchListings();
+        alert("Item successfully claimed!");
+
+        const updatedListings = await axios.get("http://127.0.0.1:8000/api/listings");
+if (Array.isArray(updatedListings.data)) {
+  setListings(updatedListings.data);
+}
       } else {
         setClaimError("Failed to claim listing.");
       }
     } catch (error) {
-      setClaimError(error.response?.data?.detail || "Failed to claim listing. Please try again.");
+      console.error("Error during claim:", error);
+      setClaimError("An error occurred while claiming the listing.");
     }
   };
 
@@ -114,7 +116,10 @@ export default function ClaimerPage() {
               <div
                 key={listing.id}
                 className="listing-card"
-                onClick={() => setSelectedListing(listing)}
+                onClick={() => {
+                  setSelectedListing(listing);
+                  console.log("Listing selected:", listing); // Log to confirm selection
+                }}
               >
                 <h3>Listing #{listing.id}</h3>
                 {(listing.listPicture || listing.listPicture2) ? (
@@ -144,7 +149,7 @@ export default function ClaimerPage() {
             />
           )}
 
-          <button onClick={handleClaim} className="btn btn-primary claim-button">
+          <button onClick={handleClaim} className="btn btn-primary claimer-button">
             Claim Listing
           </button>
           <button onClick={() => setSelectedListing(null)} className="btn btn-secondary">
