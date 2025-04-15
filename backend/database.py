@@ -355,3 +355,20 @@ def get_all_listings(db: Session):
     except Exception as e:
         print(f"Error fetching all listings: {e}")
         raise HTTPException(status_code=500, detail="Error fetching listings from database")
+
+
+def get_unclaimed_listings():
+    try:
+        with create_connection() as conn:
+            cursor = conn.cursor()
+            query = "SELECT * FROM Listing WHERE isClaimed = 0"
+            print(f"Executing query: {query}")  # Log the query
+            cursor.execute(query)
+            columns = [column[0] for column in cursor.description]
+            listings = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            return listings
+    except Exception as e:
+        import traceback
+        print("Error fetching unclaimed listings:")
+        traceback.print_exc()
+        return []

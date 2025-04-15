@@ -12,7 +12,7 @@ from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form, API
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 from sqlalchemy import text
-from database import get_db, newListing, get_all_listings
+from database import get_db, newListing, get_all_listings, get_unclaimed_listings
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
@@ -396,6 +396,17 @@ def read_all_listings(db: Session = Depends(get_db)):
         except Exception as e:
             print(f"Error fetching listings: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/listings/unclaimed")
+def fetch_unclaimed_listings():
+    try:
+        listings = get_unclaimed_listings()
+        return listings
+    except Exception as e:
+        print(f"API error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch unclaimed listings")
+
+            
 
 @router.get("/sold/{list_user_id}")
 def get_sold_items(list_user_id: str, db: Session = Depends(get_db)):

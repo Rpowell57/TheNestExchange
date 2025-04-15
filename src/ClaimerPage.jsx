@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./ClaimerPage.css";
 
-// 🔁 Place this ABOVE the ClaimerPage component
+// 🔁 Image slider component
 function ListingImageSlider({ images }) {
   const [currentImage, setCurrentImage] = useState(0);
 
@@ -18,11 +18,11 @@ function ListingImageSlider({ images }) {
   return (
     <div className="image-slider">
       <img
-        key={images[currentImage]} // Helps React know image changed
+        key={images[currentImage]} // Optional but harmless
         src={images[currentImage]}
         alt="listing"
         className="listing-image"
-        onError={(e) => e.target.src = '/fallback.jpg'}
+        onError={(e) => (e.target.src = "/fallback.jpg")}
       />
       <div className="slider-controls">
         <button onClick={prevImage} className="slider-btn">‹</button>
@@ -43,14 +43,16 @@ export default function ClaimerPage() {
     const fetchListings = async () => {
       setLoading(true);
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/listings");
+        const response = await axios.get("http://127.0.0.1:8000/api/listings/unclaimed");
         if (Array.isArray(response.data)) {
           setListings(response.data);
         } else {
           throw new Error("Unexpected response format.");
         }
       } catch (error) {
-        setClaimError(error.response?.data?.detail || error.message || "Failed to fetch listings.");
+        setClaimError(
+          error.response?.data?.detail || error.message || "Failed to fetch listings."
+        );
       } finally {
         setLoading(false);
       }
@@ -66,28 +68,32 @@ export default function ClaimerPage() {
         setClaimError("User ID not found. Please log in.");
         return;
       }
-
-      console.log("Selected Listing:", selectedListing); // Add a log to inspect the selected listing
   
-      if (!selectedListing || !selectedListing.id) {
+      if (!selectedListing || !selectedListing.listID) {
         setClaimError("No listing selected.");
         return;
       }
-
+  
+      
+      const formData = new FormData();
+      formData.append("claimedUserID", userId);
+      formData.append("claimedReview", "Pending"); 
+      formData.append("claimedRating", "5");
+  
       const response = await axios.post(
-        `http://127.0.0.1:8000/api/claim/${selectedListing.id}`,
-        { user_id: parseInt(userId) }
+        `http://127.0.0.1:8000/api/claim/${selectedListing.listID}`,
+        formData
       );
-
+  
       if (response.status === 200) {
         setClaimError("");
         setSelectedListing(null);
         alert("Item successfully claimed!");
-
-        const updatedListings = await axios.get("http://127.0.0.1:8000/api/listings");
-if (Array.isArray(updatedListings.data)) {
-  setListings(updatedListings.data);
-}
+  
+        const updatedListings = await axios.get("http://127.0.0.1:8000/api/listings/unclaimed");
+        if (Array.isArray(updatedListings.data)) {
+          setListings(updatedListings.data);
+        }
       } else {
         setClaimError("Failed to claim listing.");
       }
@@ -96,6 +102,7 @@ if (Array.isArray(updatedListings.data)) {
       setClaimError("An error occurred while claiming the listing.");
     }
   };
+  
 
   return (
     <div className="container claimer-container">
@@ -114,14 +121,14 @@ if (Array.isArray(updatedListings.data)) {
           <div className="listings-section">
             {listings.map((listing) => (
               <div
-                key={listing.id}
+                key={listing.listID} 
                 className="listing-card"
                 onClick={() => {
                   setSelectedListing(listing);
-                  console.log("Listing selected:", listing); // Log to confirm selection
+                  console.log("Listing selected:", listing);
                 }}
               >
-                <h3>Listing #{listing.id}</h3>
+                <h3>Listing #{listing.listID}</h3>
                 {(listing.listPicture || listing.listPicture2) ? (
                   <ListingImageSlider
                     images={[listing.listPicture, listing.listPicture2].filter(Boolean)}
