@@ -252,7 +252,7 @@ async def test_image_upload(image: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-from fastapi import APIRouter
+
 
 # Create a router
 router = APIRouter()
