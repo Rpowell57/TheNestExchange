@@ -3,6 +3,7 @@ import os
 import urllib.parse
 import redis
 import json
+import traceback
 from sqlalchemy import text 
 from datetime import date
 from sqlalchemy.orm import Session
@@ -372,3 +373,17 @@ def get_unclaimed_listings():
         print("Error fetching unclaimed listings:")
         traceback.print_exc()
         return []
+
+def get_all_users():
+    try:
+        with create_connection() as conn:
+            print("Fetching users from database...")
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM dbo.Users")
+            columns = [column[0] for column in cursor.description]
+            users = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            return users
+    except Exception as e:
+        print("Exception in get_all_users:")
+        traceback.print_exc()
+        raise e  

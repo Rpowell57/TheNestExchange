@@ -12,12 +12,14 @@ from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form, API
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 from sqlalchemy import text
-from database import get_db, newListing, get_all_listings, get_unclaimed_listings
+from database import get_db, newListing, get_all_listings, get_unclaimed_listings, get_all_users
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 from dotenv import load_dotenv
 from database import upload_image_to_blob
+from fastapi.responses import JSONResponse
+
 app = FastAPI()
 # Load environment variables
 load_dotenv()
@@ -430,6 +432,16 @@ def get_claimed_items(list_user_id: str, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"Error fetching claimed listings: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+
+@router.get("/users")
+def fetch_all_users():
+    try:
+        users = get_all_users()  # Direct DB fetch
+        return users
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
 app.include_router(router, prefix="/api")
