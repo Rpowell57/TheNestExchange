@@ -21,7 +21,6 @@ from database import upload_image_to_blob
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
-# Load environment variables
 load_dotenv()
 router = APIRouter()
 
@@ -255,9 +254,6 @@ async def test_image_upload(image: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
-# Create a router
-router = APIRouter()
 
 @router.get("/listings/pending")
 def get_pending_listings(db: Session = Depends(get_db)):
