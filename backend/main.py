@@ -438,7 +438,7 @@ def get_claimed_items(list_user_id: str, db: Session = Depends(get_db)):
 @router.get("/users")
 def fetch_all_users():
     try:
-        users = get_all_users()  # Direct DB fetch
+        users = get_all_users()  
         return users
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
