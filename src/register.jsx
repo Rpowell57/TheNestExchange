@@ -7,7 +7,6 @@ export default function Register() {
     const [userID, setUserID] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [isAdmin, setIsAdmin] = useState(0);
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [isStudent, setIsStudent] = useState(0);
@@ -25,7 +24,7 @@ export default function Register() {
             setError("All fields are required.");
             return;
         }
-
+        const calculatedIsAdmin = isStudent ? 0 : 1;
         try {
             const response = await axios.post(
                 "http://127.0.0.1:8000/users/create",
@@ -33,10 +32,10 @@ export default function Register() {
                     userID,
                     userEmail: email,
                     userPassword: password,
-                    userIsAdmin: isAdmin,
                     userFirstName: firstName,
                     userLastName: lastName,
-                    userIsStudent: isStudent
+                    userIsStudent: isStudent,
+                    userIsAdmin: isStudent ? 0 : 1
                 },
                 { headers: { "Content-Type": "application/json" } }
             );
@@ -77,12 +76,7 @@ export default function Register() {
                     </div>
                     <div className="form-group">
                         <label>
-                            <input type="checkbox" checked={isAdmin} onChange={() => setIsAdmin(isAdmin ? 0 : 1)} /> Admin
-                        </label>
-                    </div>
-                    <div className="form-group">
-                        <label>
-                            <input type="checkbox" checked={isStudent} onChange={() => setIsStudent(isStudent ? 0 : 1)} /> Student
+                            <input type="checkbox" checked={isStudent} onChange={() => setIsStudent(isStudent ? 0 : 1)} /> I am a student
                         </label>
                     </div> 
                     {error && <div className="alert alert-danger">{error}</div>}

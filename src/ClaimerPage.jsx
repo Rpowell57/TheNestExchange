@@ -105,7 +105,7 @@ export default function ClaimerPage() {
   
 
   return (
-    <div class="background-image1">
+    <div className="background-image1">
     <div className="background-container1">
     <div className="container claimer-container">
       <div className="claimer-box">

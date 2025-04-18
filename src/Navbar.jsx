@@ -66,9 +66,8 @@ export default function NavBar() {
                                         <ul className="dropdown-menu">
                                             <li>
                                                 <Link className="dropdown-item" to="/Admin">Admin Dashboard</Link>
-                                            </li>
-                                            <li>
                                                 <Link className="dropdown-item" to="/ManageListing">Manage Listings</Link>
+                                                <Link className="dropdown-item" to="/ViewAllUsers">View All Users</Link>
                                             </li>
                                         </ul>
                                     </li>

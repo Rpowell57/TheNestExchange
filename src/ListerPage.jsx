@@ -88,7 +88,7 @@ function ListerPage() {
 
   return (
       <form onSubmit={handleSubmit} encType="multipart/form-data">
-              <div class="background-image">
+              <div className="background-image">
           <div className="background-container">
       <div className="lister-container">
         <div className="hero-section">
