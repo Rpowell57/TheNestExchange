@@ -105,8 +105,8 @@ export default function ClaimerPage() {
   
 
   return (
-    <div className="background-image1">
-    <div className="background-container1">
+    <div className="background-image">
+    <div className="background-container">
     <div className="container claimer-container">
       <div className="claimer-box">
         <h1>Claim a Listing</h1>

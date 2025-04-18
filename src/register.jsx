@@ -23,7 +23,7 @@ export default function Register() {
             setError("All fields are required.");
             return;
         }
-
+        const calculatedIsAdmin = isStudent ? 0 : 1;
         try {
             const response = await axios.post(
                 "http://127.0.0.1:8000/users/create",
@@ -31,10 +31,10 @@ export default function Register() {
                     userID,
                     userEmail: email,
                     userPassword: password,
-                    userIsAdmin: 0,      // hardcoded
                     userFirstName: firstName,
                     userLastName: lastName,
-                    userIsStudent: 1     // hardcoded
+                    userIsStudent: isStudent,
+                    userIsAdmin: isStudent ? 0 : 1
                 },
                 { headers: { "Content-Type": "application/json" } }
             );
@@ -49,6 +49,9 @@ export default function Register() {
     };
 
     return (
+        <div className="background-image">
+        <div className="background-container">
+        <div className="lister-container"></div>
         <div className="container register-container">
             <div className="register-box">
                 <h1>Register</h1>
@@ -73,6 +76,11 @@ export default function Register() {
                         <label htmlFor="lastName">Last Name</label>
                         <input type="text" className="form-control" id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
                     </div>
+                    <div className="form-group">
+                        <label>
+                            <input type="checkbox" checked={isStudent} onChange={() => setIsStudent(isStudent ? 0 : 1)} /> I am a student
+                        </label>
+                    </div> 
                     {error && <div className="alert alert-danger">{error}</div>}
                     {success && <div className="alert alert-success">{success}</div>}
                     <div className="button-group">
@@ -81,6 +89,8 @@ export default function Register() {
                     </div>
                 </form>
             </div>
+        </div>
+        </div>
         </div>
     );
 }

@@ -31,6 +31,8 @@ export default function Login() {
             if (data.message === "Login successful") {
                 
                 localStorage.setItem("userID", data.userID);
+                localStorage.setItem("userFirstName", response.data.firstName);
+
                 try {
                     const adminResponse = await axios.get(`http://127.0.0.1:8000/users/check-admin?userID=${data.userID}`);
                     const isAdmin = adminResponse.data.isAdmin;
@@ -52,6 +54,9 @@ export default function Login() {
     
 
     return (
+        <div className="background-image">
+        <div className="background-container">
+        <div className="lister-container">
         <div className="container login-container">
             <div className="login-box">
                 <h1>Login</h1>
@@ -99,6 +104,9 @@ export default function Login() {
                     </div>
                 </form>
             </div>
+        </div>
+        </div>
+        </div>
         </div>
     );
 }

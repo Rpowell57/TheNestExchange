@@ -3,6 +3,9 @@ import "./HomePage.css"; // Import the CSS file for styling
 
 export default function HomePage() {
     return (
+        <div className="background-image">
+        <div className="background-container">
+        <div className="lister-container">
         <div className="home-container">
             <div className="hero-section">
                 <h1>Welcome to The Nest Exchange</h1>
@@ -37,6 +40,9 @@ export default function HomePage() {
                 <p>Start listing and claiming items while contributing to a more sustainable campus.</p>
                 <Link to="/register" className="btn btn-secondary">Sign Up Now</Link>
             </div>
+        </div>
+        </div>
+        </div>
         </div>
     );
 }

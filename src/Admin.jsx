@@ -5,6 +5,9 @@ import "./AdminPage.css";
 
 export default function AdminDashboard() {
   const [pendingListings, setPendingListings] = useState([]);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [selectedListingId, setSelectedListingId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,7 +24,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleAction = async (id, action) => {
+  const handleAction = async (id, action, reason ="") => {
     try {
       const url =
         action === "approve"
@@ -30,12 +33,22 @@ export default function AdminDashboard() {
 
       const form = new FormData();
       form.append("listID", id);
+      if (action === "reject" && reason) {
+        form.append("rejectionReason", reason);
+      }
 
       await axios.post(url, form);
-      fetchPendingListings(); // Refresh the pending listings
+      setShowRejectModal(false);
+      setRejectionReason("");
+      setSelectedListingId(null);
+      fetchPendingListings(); 
     } catch (error) {
       console.error(`Failed to ${action} listing:`, error);
     }
+  };
+  const openRejectModal = (id) => {
+    setSelectedListingId(id);
+    setShowRejectModal(true);
   };
 
   return (
@@ -58,12 +71,35 @@ export default function AdminDashboard() {
 
               <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginTop: "15px" }}>
                 <button className="claim-button" onClick={() => handleAction(listing.id, "approve")}>Approve</button>
-                <button className="claim-button" onClick={() => handleAction(listing.id, "reject")}>Reject</button>
+                <button className="claim-button" onClick={() => openRejectModal(listing.id)}>Reject</button>
               </div>
             </div>
           ))
         )}
       </div>
+      {showRejectModal && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>Reason for Rejection</h3>
+            <textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Enter reason here..."
+              rows="4"
+              style={{ width: "100%", padding: "10px" }}
+            />
+            <div style={{ marginTop: "10px", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button className="btn" onClick={() => setShowRejectModal(false)}>Cancel</button>
+              <button
+                className="btn btn-danger"
+                onClick={() => handleAction(selectedListingId, "reject", rejectionReason)}
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

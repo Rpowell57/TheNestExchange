@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./ManageListing.css";
 
 export default function ManageListing() {
   const [listings, setListings] = useState([]);
-
+  const navigate = useNavigate();
   useEffect(() => {
     fetchListings();
   }, []);
@@ -40,6 +41,13 @@ export default function ManageListing() {
   return (
     <div className="claimer-container">
       <h1 className="hero-section">Manage All Listings</h1>
+      <button
+        className="rejected-button"
+        onClick={() => navigate("/RejectedListing")}
+        style={{ marginBottom: "20px", padding: "10px", cursor: "pointer" }}
+      >
+        View Rejected Listings
+      </button>
       <div className="listings-section">
         {listings.map((listing) => (
           <div key={listing.listID} className="listing-card"> 
