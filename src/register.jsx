@@ -11,6 +11,7 @@ export default function Register() {
     const [lastName, setLastName] = useState("");
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const [isStudent, setIsStudent] = useState(false);
 
     const navigate = useNavigate();
 
