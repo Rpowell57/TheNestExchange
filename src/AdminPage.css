@@ -204,10 +204,7 @@ body {
   .user-table th {
     background-color: #f2f2f2;
   }
-  .modal-content .btn-danger {
-  background-color: #ff4d4d;
-  color: black;
-}
+
 .btn-danger {
   background-color: #ff4d4d;
   color: black;

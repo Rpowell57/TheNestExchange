@@ -11,6 +11,7 @@ import ListingDetailsPage from "./ListingDetailsPage";
 import Admin from './Admin';
 import ManageListing from './ManageListing';
 import ViewAllUsers from './ViewAllUsers';
+import RejectedListing from './RejectedListing';
 
 function App() {
     useEffect(() => {
@@ -34,6 +35,7 @@ function App() {
                 <Route path="/Admin" element={<Admin />} />
                 <Route path="/ManageListing" element={<ManageListing />} />
                 <Route path="/ViewAllUsers" element={<ViewAllUsers />} />
+                <Route path="/RejectedListing" element={<RejectedListing />} />
               </Routes>
           </BrowserRouter>
       </div>
