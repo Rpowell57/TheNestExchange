@@ -2,12 +2,12 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import ksuLogo from "./assets/ksulogo.png";
 import "./Navbar.css";
+import NotificationListener from "./NotificationListener.jsx";
 
 export default function NavBar() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const [userName, setUserName] = useState("");
-
 
     useEffect(() => {
         const checkAuth = () => {
@@ -37,75 +37,80 @@ export default function NavBar() {
     };
 
     return (
-        <nav className="navbar">
-            <div className="container">
-                <img className="logo" src={ksuLogo} alt="KSU Logo" />
+        <>
+            {/* Notification listener mounted globally when authenticated */}
+            {isAuthenticated && <NotificationListener userId={userName} />}
 
-                <div className="navbar-container" id="navbarNav">
-                    <ul className="navbar-nav">
-                        <li className="nav-item">
-                            <Link className="nav-link" to="/HomePage">Home Page</Link>
-                        </li>
+            <nav className="navbar">
+                <div className="container">
+                    <img className="logo" src={ksuLogo} alt="KSU Logo" />
 
-                        {isAuthenticated && (
-                            <>
-                                <li className="nav-item">
-                                    <Link className="nav-link" to="/ListerPage">Lister</Link>
-                                </li>
-                                <li className="nav-item">
-                                    <Link className="nav-link" to="/ClaimerPage">Claimer</Link>
-                                </li>
+                    <div className="navbar-container" id="navbarNav">
+                        <ul className="navbar-nav">
+                            <li className="nav-item">
+                                <Link className="nav-link" to="/HomePage">Home Page</Link>
+                            </li>
 
-                                {isAdmin && (
-                                    <li className="nav-item dropdown">
-                                        <span
-                                            className="nav-link dropdown-toggle"
-                                            role="button"
-                                            data-bs-toggle="dropdown"
-                                            aria-expanded="false"
-                                            style={{ cursor: "pointer" }}
-                                        >
-                                            Admin
-                                        </span>
-                                        <ul className="dropdown-menu">
-                                            <li>
-                                                <Link className="dropdown-item" to="/Admin">Admin Dashboard</Link>
-                                                <Link className="dropdown-item" to="/ManageListing">Manage Listings</Link>
-                                                <Link className="dropdown-item" to="/ViewAllUsers">View All Users</Link>
-                                            </li>
-                                        </ul>
+                            {isAuthenticated && (
+                                <>
+                                    <li className="nav-item">
+                                        <Link className="nav-link" to="/ListerPage">Lister</Link>
                                     </li>
-                                )}
-                            </>
-                        )}
-                    </ul>
+                                    <li className="nav-item">
+                                        <Link className="nav-link" to="/ClaimerPage">Claimer</Link>
+                                    </li>
 
-                    <div className="navbar-right">
-                        {isAuthenticated && (
-                            <span style={{ marginRight: "10px", fontWeight: "bold", color:"white" }}>
-                                Welcome, {userName}
-                            </span>
-                        )}
-                        {isAuthenticated ? (
-                            <button
-                                className="nav-btn"
-                                onClick={handleLogout}
-                                style={{ backgroundColor: "#E2C116", borderColor: "#000000" }}
-                            >
-                                Logout
-                            </button>
-                        ) : (
-                            <Link
-                                to="/login"
-                                className="nav-btn"
-                                style={{ backgroundColor: "#E2C116", borderColor: "#000000" }}
-                            >
-                                Login/Register
-                            </Link>
-                        )}
+                                    {isAdmin && (
+                                        <li className="nav-item dropdown">
+                                            <span
+                                                className="nav-link dropdown-toggle"
+                                                role="button"
+                                                data-bs-toggle="dropdown"
+                                                aria-expanded="false"
+                                                style={{ cursor: "pointer" }}
+                                            >
+                                                Admin
+                                            </span>
+                                            <ul className="dropdown-menu">
+                                                <li>
+                                                    <Link className="dropdown-item" to="/Admin">Admin Dashboard</Link>
+                                                    <Link className="dropdown-item" to="/ManageListing">Manage Listings</Link>
+                                                    <Link className="dropdown-item" to="/ViewAllUsers">View All Users</Link>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                    )}
+                                </>
+                            )}
+                        </ul>
+
+                        <div className="navbar-right">
+                            {isAuthenticated && (
+                                <span style={{ marginRight: "10px", fontWeight: "bold", color: "white" }}>
+                                    Welcome, {userName}
+                                </span>
+                            )}
+                            {isAuthenticated ? (
+                                <button
+                                    className="nav-btn"
+                                    onClick={handleLogout}
+                                    style={{ backgroundColor: "#E2C116", borderColor: "#000000" }}
+                                >
+                                    Logout
+                                </button>
+                            ) : (
+                                <Link
+                                    to="/login"
+                                    className="nav-btn"
+                                    style={{ backgroundColor: "#E2C116", borderColor: "#000000" }}
+                                >
+                                    Login/Register
+                                </Link>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
-        </nav>
+            </nav>
+        </>
     );
 }
