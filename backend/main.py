@@ -154,33 +154,33 @@ def verify_login(login_data: LoginRequest, db: Session = Depends(get_db)):
     
     if cached_result:
         print("Cache hit for user login verification!")
-        return {"message": "Login successful", "userID": login_data.userID} if cached_result == "True" else HTTPException(status_code=401, detail="Invalid credentials")
-    
-    try:
-        query = text("""
-            EXEC verifyLogin :userID, :userPassword
-        """)
-        result = db.execute(query, login_data.dict()).fetchone()
-
-        if result and result[0]:  
-            admin_check_query = text("""
-                SELECT userIsAdmin FROM Users WHERE userID = :userID
-            """)
-            admin_result = db.execute(admin_check_query, {"userID": login_data.userID}).fetchone()
-
-            if admin_result and admin_result[0] == 1:  # Check if the user is an admin
-                is_admin = True
-            else:
-                is_admin = False
-
-            redis_client.setex(cache_key, 3600, "True")  
-            return {"message": "Login successful", "userID": login_data.userID, "isAdmin": is_admin}
+        if cached_result == "True":
+            return {"message": "Login successful", "userID": login_data.userID}
         else:
-            redis_client.setex(cache_key, 3600, "False") 
             raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
+    try:
+        query = text(""" EXEC verifyLogin :userID, :userPassword """)
+        result = db.execute(query, {"userID": login_data.userID, "userPassword": login_data.userPassword}).fetchone()
+        
+        # Check if the result is None or contains an invalid response
+        if not result or result[0] == 0:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Log the query and the exception
+        print(f"Error executing query: {e}")
+        raise HTTPException(status_code=500, detail="DB Error")
+
+    # Cache the successful login result
+    redis_client.setex(cache_key, 3600, "True")
+
+    # Check if the user is an admin
+    admin_check_query = text("SELECT userIsAdmin FROM Users WHERE userID = :userID")
+    admin_result = db.execute(admin_check_query, {"userID": login_data.userID}).fetchone()
+    is_admin = admin_result and admin_result[0] == 1
+
+    return {"message": "Login successful", "userID": login_data.userID, "isAdmin": is_admin}
 
 
 
@@ -193,10 +193,10 @@ threading.Thread(target=open_browser).start()
 
 @app.post("/listings/create")
 async def create_listing(
-    listUserID: str= Form(...),
-    listDate: str= Form(...),
+    listUserID: str = Form(...),
+    listDate: str = Form(...),
     listCategory: int = Form(...),
-    listDescription: str= Form(...),
+    listDescription: str = Form(...),
     listClaimDescription: str = Form(...),
     isClaimed: int = Form(...),
     listPicture: UploadFile = File(...),
@@ -204,26 +204,25 @@ async def create_listing(
     db: Session = Depends(get_db)
 ):
     try:
-        
         picture_data = await listPicture.read()
         picture_filename = f"{uuid.uuid4()}{os.path.splitext(listPicture.filename)[1]}"
-        picture_url = upload_image_to_blob(picture_data, picture_filename)  
- 
+        picture_url = upload_image_to_blob(picture_data, picture_filename)
+
         picture2_data = await listPicture2.read()
         picture2_filename = f"{uuid.uuid4()}{os.path.splitext(listPicture2.filename)[1]}"
-        picture2_url = upload_image_to_blob(picture2_data, picture2_filename) 
+        picture2_url = upload_image_to_blob(picture2_data, picture2_filename)
 
         newListing(
-        aListUser=listUserID,
-            alistname=listDate,  
+            aListUser=listUserID,
+            alistname=listDate,
             listCategory=listCategory,
             alistdescription=listDescription,
             aListClaimDescription=listClaimDescription,
             aIsClaimed=isClaimed,
             aListPicture=picture_url,
             alistPicture2=picture2_url
-       )
-        redis_client.delete("listings:all")
+        )
+
         return {
             "message": "Listing created successfully",
             "listPicture": picture_url,
@@ -232,7 +231,7 @@ async def create_listing(
     except Exception as e:
         traceback.print_exc()
         print(f"Error creating listing: {e}")
-        raise HTTPException(status_code=500, detail="Error creating listing")
+
 
 
 

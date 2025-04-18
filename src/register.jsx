@@ -7,13 +7,11 @@ export default function Register() {
     const [userID, setUserID] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [isAdmin, setIsAdmin] = useState(0);
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
-    const [isStudent, setIsStudent] = useState(0);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
-    
+
     const navigate = useNavigate();
 
     const onFormSubmit = async (event) => {
@@ -33,14 +31,14 @@ export default function Register() {
                     userID,
                     userEmail: email,
                     userPassword: password,
-                    userIsAdmin: isAdmin,
+                    userIsAdmin: 0,      // hardcoded
                     userFirstName: firstName,
                     userLastName: lastName,
-                    userIsStudent: isStudent
+                    userIsStudent: 1     // hardcoded
                 },
                 { headers: { "Content-Type": "application/json" } }
             );
-            
+
             if (response.data.message === "User created successfully") {
                 setSuccess("Registration successful! Redirecting to login...");
                 setTimeout(() => navigate("/login"), 2000);
@@ -49,7 +47,7 @@ export default function Register() {
             setError(error.response?.data?.detail || "Registration failed.");
         }
     };
-    
+
     return (
         <div className="container register-container">
             <div className="register-box">
@@ -75,16 +73,6 @@ export default function Register() {
                         <label htmlFor="lastName">Last Name</label>
                         <input type="text" className="form-control" id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
                     </div>
-                    <div className="form-group">
-                        <label>
-                            <input type="checkbox" checked={isAdmin} onChange={() => setIsAdmin(isAdmin ? 0 : 1)} /> Admin
-                        </label>
-                    </div>
-                    <div className="form-group">
-                        <label>
-                            <input type="checkbox" checked={isStudent} onChange={() => setIsStudent(isStudent ? 0 : 1)} /> Student
-                        </label>
-                    </div> 
                     {error && <div className="alert alert-danger">{error}</div>}
                     {success && <div className="alert alert-success">{success}</div>}
                     <div className="button-group">

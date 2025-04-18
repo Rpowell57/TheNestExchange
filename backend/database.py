@@ -154,7 +154,6 @@ def newUser(userID, userEmail, userPassword, userIsAdmin, userFirstName, userLas
     except Exception as e:
         print(f"Error inserting new user: {e}")
 
-#Listing management for future work
 def newListing(aListUser, alistname, listCategory, alistdescription, aListClaimDescription, aIsClaimed, aListPicture, alistPicture2):
     try:
         with create_connection() as conn:
@@ -164,21 +163,7 @@ def newListing(aListUser, alistname, listCategory, alistdescription, aListClaimD
                 (aListUser, alistname, listCategory, alistdescription, aListClaimDescription, aIsClaimed, aListPicture, alistPicture2)
             )
             conn.commit()
-            listID = cursor.execute("SELECT SCOPE_IDENTITY()").fetchone()[0]  # Get last inserted ID
-            
-            # Cache the listing
-            listing_data = {
-                "user": aListUser,
-                "name": alistname,
-                "category": listCategory,
-                "description": alistdescription,
-                "claim_description": aListClaimDescription,
-                "is_claimed": aIsClaimed,
-                "picture1": aListPicture,
-                "picture2": alistPicture2
-            }
-            redis_client.setex(f"listing:{listID}", 3600, json.dumps(listing_data))
-            print("New listing created and cached successfully!")
+            print("New listing inserted into the database successfully.")
     except Exception as e:
         print(f"Error inserting new listing: {e}")
 
