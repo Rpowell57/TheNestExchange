@@ -50,6 +50,9 @@ export default function Register() {
     };
     
     return (
+        <div className="background-image">
+        <div className="background-container">
+        <div className="lister-container"></div>
         <div className="container register-container">
             <div className="register-box">
                 <h1>Register</h1>
@@ -87,6 +90,8 @@ export default function Register() {
                     </div>
                 </form>
             </div>
+        </div>
+        </div>
         </div>
     );
 }

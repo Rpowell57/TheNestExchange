@@ -238,11 +238,3 @@
     font-size: 18px;
     color: #555;
 }
-.background-image {
-    background-image: url("./assets/visit-banner.jpg");
-    height: 100%;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-
-}

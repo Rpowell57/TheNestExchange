@@ -54,6 +54,9 @@ export default function Login() {
     
 
     return (
+        <div className="background-image">
+        <div className="background-container">
+        <div className="lister-container">
         <div className="container login-container">
             <div className="login-box">
                 <h1>Login</h1>
@@ -101,6 +104,9 @@ export default function Login() {
                     </div>
                 </form>
             </div>
+        </div>
+        </div>
+        </div>
         </div>
     );
 }
