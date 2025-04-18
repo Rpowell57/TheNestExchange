@@ -9,14 +9,16 @@ export default function ManageListing() {
     fetchListings();
   }, []);
 
-  const fetchListings = async () => {
-    try {
-      const response = await axios.get("http://127.0.0.1:8000/api/listings");
-      setListings(response.data);
-    } catch (error) {
-      console.error("Failed to fetch listings:", error);
-    }
-  };
+ const fetchListings = async () => {
+  try {
+    const response = await axios.get("http://127.0.0.1:8000/api/listings");
+    // Filter out claimed listings if needed
+    const unclaimedListings = response.data.filter(listing => !listing.isClaimed);
+    setListings(unclaimedListings);
+  } catch (error) {
+    console.error("Failed to fetch listings:", error);
+  }
+};
 
   const handleDelete = (listID) => {
     console.log("Deleting listing with ID:", listID); 
