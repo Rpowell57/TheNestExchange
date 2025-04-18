@@ -10,7 +10,16 @@ export default function RejectedListing() {
     useEffect(() => {
         fetchListings();
     }, []);
-
+    const fetchListings = async () => {
+        try {
+            const response = await axios.get("http://127.0.0.1:8000/api/listings");
+            // Filter for rejected listings only
+            const rejectedListings = response.data.filter(listing => !listing.isApproved);
+            setListings(rejectedListings);
+        } catch (error) {
+            console.error("Failed to fetch listings:", error);
+        }
+    };
 
     const handleReject = async (listID) => {
         try {

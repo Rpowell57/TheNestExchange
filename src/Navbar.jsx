@@ -38,19 +38,33 @@ export default function NavBar() {
 
     return (
         <>
-            {/* Notification listener mounted globally when authenticated */}
             {isAuthenticated && <NotificationListener userId={userName} />}
 
             <nav className="navbar">
                 <div className="container">
                     <img className="logo" src={ksuLogo} alt="KSU Logo" />
-
+                    {isAuthenticated && (
+                    <input
+                        type="text"
+                        placeholder="Search..."
+                        className="navbar-search"
+                        style={{
+                            marginLeft: "20px",
+                            padding: "6px 10px",
+                            fontSize: "16px",
+                            borderRadius: "5px",
+                            border: "1px solid #ccc",
+                            width: "200px"
+                        }}
+                    />
+                )}
                     <div className="navbar-container" id="navbarNav">
                         <ul className="navbar-nav">
+                        {!isAuthenticated && (
                             <li className="nav-item">
                                 <Link className="nav-link" to="/HomePage">Home Page</Link>
                             </li>
-
+                        )}
                             {isAuthenticated && (
                                 <>
                                     <li className="nav-item">
