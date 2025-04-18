@@ -154,7 +154,7 @@ def verify_login(login_data: LoginRequest, db: Session = Depends(get_db)):
     
     if cached_result:
         print("Cache hit for user login verification!")
-        return {"message": "Login successful", "userID": login_data.userID} if cached_result == "True" else HTTPException(status_code=401, detail="Invalid credentials")
+        return {"message": "Login successful", "userID": login_data.userID } if cached_result == "True" else HTTPException(status_code=401, detail="Invalid credentials")
     
     try:
         query = text("""

@@ -31,6 +31,8 @@ export default function Login() {
             if (data.message === "Login successful") {
                 
                 localStorage.setItem("userID", data.userID);
+                localStorage.setItem("userFirstName", response.data.firstName);
+
                 try {
                     const adminResponse = await axios.get(`http://127.0.0.1:8000/users/check-admin?userID=${data.userID}`);
                     const isAdmin = adminResponse.data.isAdmin;

@@ -37,6 +37,7 @@ export default function ViewAllUsers() {
               <th>Last Name</th>
               <th>Is Student</th>
               <th>Is Admin</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -48,6 +49,14 @@ export default function ViewAllUsers() {
                 <td>{user.userLastName}</td>
                 <td>{user.userIsStudent ? "Yes" : "No"}</td>
                 <td>{user.userIsAdmin ? "Yes" : "No"}</td>
+                <td>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleDeactivate(user.userID)}
+                  >
+                  Deactivate
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

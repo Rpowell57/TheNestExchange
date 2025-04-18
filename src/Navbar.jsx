@@ -6,14 +6,18 @@ import "./Navbar.css";
 export default function NavBar() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [userName, setUserName] = useState("");
+
 
     useEffect(() => {
         const checkAuth = () => {
             const userID = localStorage.getItem("userID");
             const adminFlag = localStorage.getItem("userIsAdmin");
+            const id = localStorage.getItem("userID");
 
             console.log("userID:", userID);
             console.log("userIsAdmin:", adminFlag);
+            setUserName(id || "");
 
             setIsAuthenticated(!!userID);
             setIsAdmin(adminFlag === "1");
@@ -77,6 +81,11 @@ export default function NavBar() {
                     </ul>
 
                     <div className="navbar-right">
+                        {isAuthenticated && (
+                            <span style={{ marginRight: "10px", fontWeight: "bold", color:"white" }}>
+                                Welcome, {userName}
+                            </span>
+                        )}
                         {isAuthenticated ? (
                             <button
                                 className="nav-btn"

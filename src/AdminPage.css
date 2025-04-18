@@ -204,4 +204,21 @@ body {
   .user-table th {
     background-color: #f2f2f2;
   }
-  
+  .modal-content .btn-danger {
+  background-color: #ff4d4d;
+  color: black;
+}
+.btn-danger {
+  background-color: #ff4d4d;
+  color: black;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-danger:hover {
+  background-color: #c53030;
+}
