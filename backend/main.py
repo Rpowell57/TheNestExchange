@@ -6,7 +6,7 @@ import json
 import uuid
 import traceback
 from datetime import date
-from fastapi import Body
+from fastapi import Body, WebSocket, WebSocketDisconnect
 from azure.core.exceptions import AzureError
 from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form, APIRouter
 from sqlalchemy.orm import Session
@@ -125,6 +125,25 @@ class UserCreate(BaseModel):
     userFirstName: str
     userLastName: str
     userIsStudent: int
+
+
+active_connections = []
+
+@app.websocket("/ws/notifications/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str):
+    await websocket.accept()
+    active_connections.append((user_id, websocket))
+    try:
+        while True:
+            await websocket.receive_text()  # keep alive
+    except WebSocketDisconnect:
+        active_connections.remove((user_id, websocket))
+
+def notify_user(user_id, message):
+    for uid, ws in active_connections:
+        if uid == user_id:
+            asyncio.create_task(ws.send_text(message))
+
 
 @app.post("/users/create")
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -287,11 +306,17 @@ def approve_listing(listID: int = Form(...), db: Session = Depends(get_db)):
         db.execute(query, {"listID": listID})
         db.commit()
 
-        redis_client.setex(f"listing:{listID}:approved", 3600, "True")
+        result = db.execute(text("SELECT listUserID FROM Listing WHERE listID = :listID"), {"listID": listID})
+        user_id = result.scalar()
+
+        if user_id and user_id in user_connections:
+            asyncio.create_task(user_connections[user_id].send_text("🎉 Your listing has been approved!"))
+
         return {"message": "Listing has been approved!"}
     except Exception as e:
         print(f"Error approving listing: {e}")
         raise HTTPException(status_code=500, detail="Error approving listing")
+
 
 @router.post("/listings/reject")
 def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
