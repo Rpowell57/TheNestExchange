@@ -5,6 +5,7 @@ import threading
 import json
 import uuid
 import traceback
+import asyncio
 from datetime import date
 from fastapi import Body, WebSocket, WebSocketDisconnect
 from azure.core.exceptions import AzureError

@@ -38,7 +38,7 @@ export default function ManageListing() {
       <h1 className="hero-section">Manage Listings</h1>
 
       <div className="tab-buttons" style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-        {["All", "Unclaimed"].map((tab) => (
+        {["All", "Unclaimed","Rejected Listing"].map((tab) => (
           <button
             key={tab}
             className={`tab-button ${activeTab === tab ? "active-tab" : ""}`}

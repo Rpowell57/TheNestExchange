@@ -136,3 +136,12 @@
         gap: 10px;
     }
 }
+.bell-icon {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  
+  .bell-icon:hover {
+    transform: scale(1.1);
+  }
+  

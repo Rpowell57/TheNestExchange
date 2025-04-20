@@ -4,6 +4,7 @@ import urllib.parse
 import redis
 import json
 import traceback
+from fastapi import HTTPException
 from sqlalchemy import text 
 from datetime import date
 from sqlalchemy.orm import Session
