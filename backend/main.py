@@ -338,7 +338,7 @@ def delete_listing(listID: int, db: Session = Depends(get_db)):
         db.execute(query, {"listID": listID})
         db.commit()
 
-        # Remove the listing from Redis cache
+        # Remove the listing from Redis cach
         redis_client.delete(f"listing:{listID}")
 
         return {"message": "Listing has been deleted."}
