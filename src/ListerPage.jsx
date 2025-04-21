@@ -140,7 +140,7 @@ function ListerPage() {
               accept="image/*"
               multiple
               onChange={handleFileChange}
-              className="input"
+              className="input-field"
               required
             />
 

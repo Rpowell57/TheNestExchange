@@ -1,0 +1,236 @@
+
+.marketplace-container {
+    padding: 100px 20px 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  
+  .marketplace-header {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+    justify-content: space-between;
+  }
+  
+  .marketplace-search,
+  .marketplace-filter {
+    padding: 12px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    background-color: #eee;
+    box-shadow: 0 0.3rem #dfd9d9;
+    transition: all 0.3s ease;
+    max-width: 300px;
+    flex: 1;
+  }
+  
+  .marketplace-search:focus,
+  .marketplace-filter:focus {
+    outline-color: #E2C116;
+    box-shadow: 0 0.4rem #c4a114;
+  }
+  
+  .marketplace-new {
+    padding: 12px 20px;
+    background-color: #e2c116;
+    color: black;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease;
+  }
+  
+  .marketplace-new:hover {
+    background-color: #caaa0f;
+  }
+  
+  /* Listings grid like ClaimerPage */
+  .marketplace-grid {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 30px;
+    justify-content: center;
+    background: none;
+  }
+  
+  .marketplace-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  
+  .marketplace-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  }
+  
+  .marketplace-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px 8px 0 0;
+  }
+  
+  .marketplace-info {
+    padding: 16px;
+  }
+  
+  .marketplace-info h3 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #222;
+  }
+  
+  .marketplace-info p {
+    font-size: 15px;
+    color: #555;
+    margin: 4px 0;
+  }
+  
+  .marketplace-claim {
+    display: inline-block;
+    padding: 10px 16px;
+    font-size: 16px;
+    font-weight: bold;
+    background-color: #E2C116;
+    color: black;
+    border: none;
+    border-radius: 6px;
+    margin-top: 10px;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease;
+  }
+  
+  .marketplace-claim:hover {
+    background-color: #c4a114;
+  }
+  
+  .marketplace-claim:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .marketplace-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .marketplace-search,
+    .marketplace-filter,
+    .marketplace-new {
+      width: 100%;
+    }
+  }
+  .listing-holder {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .listing-details {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  
+  .listing-details h2 {
+    font-size: 24px;
+    margin-bottom: 1rem;
+  }
+  
+  .btn.btn-secondary {
+    margin-top: 1rem;
+    background: #ccc;
+    border: none;
+    padding: 10px 20px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  
+  .btn.btn-secondary:hover {
+    background: #aaa;
+  }
+  .marketplace-info p {
+    font-size: 14px;
+    margin: 4px 0;
+    color: #444;
+  }
+  @media (max-width: 1024px) {
+    .marketplace-grid {
+      grid-template-columns: repeat(2, 1fr); 
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .marketplace-grid {
+      grid-template-columns: 1fr; 
+    }
+  }
+  .image-slider {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+  }
+  
+  .image-slider img {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+  
+  .slider-controls {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    transform: translateY(-50%);
+    padding: 0 10px;
+  }
+  
+  .slider-btn {
+    background-color: rgba(0, 0, 0, 0.4);
+    color: white;
+    border: none;
+    font-size: 20px;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .slider-btn:hover {
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+  

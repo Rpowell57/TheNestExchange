@@ -6,7 +6,6 @@ import "./ClaimerPage.css";
 // 🔁 Image slider component
 function ListingImageSlider({ images }) {
   const [currentImage, setCurrentImage] = useState(0);
-
   const nextImage = () => {
     setCurrentImage((prev) => (prev + 1) % images.length);
   };
@@ -37,6 +36,8 @@ export default function ClaimerPage() {
   const [selectedListing, setSelectedListing] = useState(null);
   const [claimError, setClaimError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -84,6 +85,7 @@ export default function ClaimerPage() {
         `http://127.0.0.1:8000/api/claim/${selectedListing.listID}`,
         formData
       );
+      
   
       if (response.status === 200) {
         setClaimError("");
@@ -102,6 +104,26 @@ export default function ClaimerPage() {
       setClaimError("An error occurred while claiming the listing.");
     }
   };
+  const handleSearch = (event) => {
+    const query = event.target.value.toLowerCase();
+    setSearchQuery(query);
+    applyFilters(query, categoryFilter);
+  };
+  
+  const handleCategoryChange = (event) => {
+    const selected = event.target.value;
+    setCategoryFilter(selected);
+    applyFilters(searchQuery, selected);
+  };
+  
+  const applyFilters = (query, category) => {
+    const filtered = listings.filter((listing) => {
+      const matchesSearch = listing.listDescription.toLowerCase().includes(query);
+      const matchesCategory = category ? String(listing.listCategory) === category : true;
+      return matchesSearch && matchesCategory;
+    });
+    setListings(filtered);
+  };
   
 
   return (
@@ -110,6 +132,32 @@ export default function ClaimerPage() {
     <div className="container claimer-container">
       <div className="claimer-box">
         <h1>Claim a Listing</h1>
+        <div className="marketplace-header">
+  <input
+    type="text"
+    placeholder="Search items..."
+    value={searchQuery}
+    onChange={handleSearch}
+    className="marketplace-search"
+  />
+
+  <select
+    value={categoryFilter}
+    onChange={handleCategoryChange}
+    className="marketplace-filter"
+  >
+    <option value="">All Categories</option>
+    <option value="1">Electronics</option>
+    <option value="2">Clothing</option>
+    <option value="3">Books</option>
+    <option value="4">Home</option>
+    <option value="5">Other</option>
+  </select>
+
+  <button className="marketplace-new" onClick={() => navigate("/ListerPage")}>
+    + Create New Listing
+  </button>
+</div>
 
         {claimError && (
           <div className="alert alert-danger">

@@ -43,7 +43,7 @@ export default function Login() {
                 }
             
                 window.dispatchEvent(new Event("storage"));
-                navigate("/ClaimerPage");
+                navigate("/marketplace");
             } else {
                 setLoginError("Invalid credentials.");
             }

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import ksuLogo from "./assets/ksulogo.png";
 import "./Navbar.css";
 import NotificationListener from "./NotificationListener.jsx";
+import NotificationBell from './NotificationBell';
 
 export default function NavBar() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -38,28 +39,29 @@ export default function NavBar() {
 
     return (
         <>
-            {/* Notification listener mounted globally when authenticated */}
             {isAuthenticated && <NotificationListener userId={userName} />}
 
             <nav className="navbar">
                 <div className="container">
                     <img className="logo" src={ksuLogo} alt="KSU Logo" />
-
                     <div className="navbar-container" id="navbarNav">
                         <ul className="navbar-nav">
+                        {!isAuthenticated && (
                             <li className="nav-item">
                                 <Link className="nav-link" to="/HomePage">Home Page</Link>
                             </li>
-
+                        )}
                             {isAuthenticated && (
                                 <>
                                     <li className="nav-item">
-                                        <Link className="nav-link" to="/ListerPage">Lister</Link>
+                                        <Link className="nav-link" to="/MyListing">My Listing</Link>
                                     </li>
+                                    {/*<li className="nav-item">
+                                        <Link className="nav-link" to="/ClaimerPage">Market Place</Link>
+                                    </li>*/}
                                     <li className="nav-item">
-                                        <Link className="nav-link" to="/ClaimerPage">Claimer</Link>
+                                        <Link className="nav-link" to="/marketplace">Market Place</Link>
                                     </li>
-
                                     {isAdmin && (
                                         <li className="nav-item dropdown">
                                             <span
@@ -85,10 +87,13 @@ export default function NavBar() {
                         </ul>
 
                         <div className="navbar-right">
-                            {isAuthenticated && (
-                                <span style={{ marginRight: "10px", fontWeight: "bold", color: "white" }}>
+                        {isAuthenticated && (
+                             <div style={{ display: "flex", alignItems: "center", gap: "15px", marginRight: "10px" , color:"#E2C116"}}>
+                                <NotificationBell userId={userName} />
+                                <span style={{ fontWeight: "bold", color: "white" }}>
                                     Welcome, {userName}
                                 </span>
+                                </div>
                             )}
                             {isAuthenticated ? (
                                 <button
