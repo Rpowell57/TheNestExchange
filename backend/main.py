@@ -13,7 +13,8 @@ from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form, API
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 from sqlalchemy import text
-from database import get_db, newListing, get_all_listings, get_unclaimed_listings, get_all_users
+from database import( get_db, newListing, get_all_listings, get_unclaimed_listings, get_all_users,
+make_admin, get_rejected_items_by_user, all_claimed_for_specific_user, all_sold_for_specific_user)
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
@@ -320,13 +321,24 @@ def approve_listing(listID: int = Form(...), db: Session = Depends(get_db)):
 
 
 @router.post("/listings/reject")
-def reject_listing(listID: int = Form(...), db: Session = Depends(get_db)):
+def reject_listing(
+    listID: int = Form(...),
+    rejectReason: str = Form(...),     
+    db: Session = Depends(get_db)
+):
+    if not rejectReason.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Rejection reason cannot be empty."
+        )
     try:
-        query = text("EXEC dontApproveListing :listID")
-        db.execute(query, {"listID": listID})
+
+        query = text("EXEC dontApproveListing :listID, :rejectReason")
+        db.execute(query, {"listID": listID, "rejectReason": rejectReason})
         db.commit()
 
         redis_client.delete(f"listing:{listID}:approved")
+
         return {"message": "Listing has been rejected!"}
     except Exception as e:
         print(f"Error rejecting listing: {e}")
@@ -461,6 +473,34 @@ def fetch_all_users():
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
+@router.post("/users/make-admin")
+def make_admin_endpoint(
+    userID: str = Form(...),
+    db:     Session = Depends(get_db)
+):
+    try:
+        make_admin(db, userID)
+        return {"message": f"User {userID} is now an admin."}
+    except Exception as e:
+        # log e as needed
+        raise HTTPException(status_code=500, detail="Error promoting user to admin")
+
+
+@router.get("/listings/rejected/{user_id}")
+def get_rejected_items(user_id: str, db: Session = Depends(get_db)):
+    items = get_rejected_items_by_user(user_id, db)
+
+    if not items:
+        raise HTTPException(status_code=404, detail="No rejected items found")
+
+    return [
+        {
+            "listID": item.rejectedListID,
+            "reason": item.rejectedReason,
+            "date": item.rejectedDate
+        }
+        for item in items
+    ]
 
 app.include_router(router, prefix="/api")
 

@@ -185,16 +185,29 @@ def approve_listing(listID):
 
 
 
-def reject_listing(listID):
+def reject_listing(list_id: int, reject_reason: str):
+    """
+    Calls the dbo.dontApproveListing stored proc, passing both
+    @listID and @rejectReason, then evicts related cache keys.
+    """
     try:
         with create_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("EXEC dontApproveListing ?", listID)
+            cursor.execute(
+                "EXEC dontApproveListing ?, ?",
+                list_id,
+                reject_reason
+            )
             conn.commit()
-            redis_client.delete(f"listing:{listID}:approved")  # Remove from cache
+
+            # evict any stale cache entries
+            redis_client.delete(f"listing:{list_id}:approved")
+            redis_client.delete(f"listing:{list_id}:pending")
+
             print("Listing has been successfully rejected!")
     except Exception as e:
         print(f"Error rejecting listing: {e}")
+
 
 
 
@@ -266,22 +279,17 @@ def get_listings_for_user(listUserID):
 def all_sold_for_specific_user(db: Session, list_user_id: str):
     try:
         query = text("""
-            EXEC allSoldForSpecificUser :listUserID
+            EXEC allSoldForSpecifUser :listUserID
         """)
         result = db.execute(query, {"listUserID": list_user_id}).fetchall()
-        
+
         listings = [
             {
-                "listID": row.listID,
-                "listUserID": row.listUserID,
-                "listDate": row.listDate.strftime("%Y-%m-%d") if isinstance(row.listDate, date) else row.listDate,
-                "listCategory": row.listCategory,
-                "listDescription": row.listDescription,
-                "listClaimDescription": row.listClaimDescription,
-                "isClaimed": row.isClaimed,
-                "listPicture": row.listPicture if row.listPicture else "",
-                "listPicture2": row.listPicture2 if row.listPicture2 else "",
-                "ListName": row.ListName
+                "soldListID": row.soldListID,
+                "soldUserID": row.soldUserID,
+                "soldReview": row.soldReview,
+                "soldRating": row.soldRating,
+                "soldDate": row.soldDate.strftime("%Y-%m-%d") if isinstance(row.soldDate, date) else row.soldDate,
             }
             for row in result
         ]
@@ -293,22 +301,17 @@ def all_sold_for_specific_user(db: Session, list_user_id: str):
 def all_claimed_for_specific_user(db: Session, list_user_id: str):
     try:
         query = text("""
-            EXEC allClaimedForSpecificUser :listUserID
+            EXEC allClaimedForSpecifUser :listUserID
         """)
         result = db.execute(query, {"listUserID": list_user_id}).fetchall()
-        
+
         listings = [
             {
-                "listID": row.listID,
-                "listUserID": row.listUserID,
-                "listDate": row.listDate.strftime("%Y-%m-%d") if isinstance(row.listDate, date) else row.listDate,
-                "listCategory": row.listCategory,
-                "listDescription": row.listDescription,
-                "listClaimDescription": row.listClaimDescription,
-                "isClaimed": row.isClaimed,
-                "listPicture": row.listPicture if row.listPicture else "",
-                "listPicture2": row.listPicture2 if row.listPicture2 else "",
-                "ListName": row.ListName
+                "claimedListID": row.claimedListID,
+                "claimedUserID": row.claimedUserID,
+                "claimedReview": row.claimedReview,
+                "claimedRating": row.claimedRating,
+                "claimedDate": row.claimedDate.strftime("%Y-%m-%d") if isinstance(row.claimedDate, date) else row.claimedDate
             }
             for row in result
         ]
@@ -373,3 +376,19 @@ def get_all_users():
         print("Exception in get_all_users:")
         traceback.print_exc()
         raise e  
+
+def make_admin(db: Session, user_id: str) -> None: 
+    #Calls the makeAdmin stored proc to flip userIsAdmin = 1
+    stmt = text("EXEC dbo.makeAdmin :userID")
+    db.execute(stmt, {"userID": user_id})
+    db.commit()
+
+
+def get_rejected_items_by_user(user_id: str, db: Session):
+    query = text("""
+        SELECT rejectedListID, rejectedReason, rejectedDate
+        FROM rejectedItems
+        WHERE rejectedUserID = :user_id
+    """)
+    result = db.execute(query, {"user_id": user_id})
+    return result.fetchall()
