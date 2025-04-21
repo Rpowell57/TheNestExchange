@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 from sqlalchemy import text
 from database import( get_db, newListing, get_all_listings, get_unclaimed_listings, get_all_users,
-make_admin, get_rejected_items_by_user, all_claimed_for_specific_user, all_sold_for_specific_user)
+make_admin, get_rejected_items_by_user, all_claimed_for_specific_user, all_sold_for_specific_user, get_user_role)
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
@@ -369,6 +369,17 @@ def claim_listing(
     db: Session = Depends(get_db)
 ):
     try:
+        cache_key = f"claim_status:{listing_id}"
+        cached_claim = redis_client.get(cache_key)
+        if cached_claim:
+            raise HTTPException(status_code=400, detail="This listing has already been claimed.")
+
+       
+        user_role = get_user_role(db, claimedUserID)
+        if user_role and user_role.lower() == "admin":
+            raise HTTPException(status_code=403, detail="Admins are not allowed to claim listings.")
+
+       
         query = text("EXEC claimItem :claimListId, :claimedUserID, :claimedReview, :claimedRating")
         db.execute(query, {
             "claimListId": listing_id,
@@ -378,11 +389,16 @@ def claim_listing(
         })
         db.commit()
 
-        redis_client.delete("listings:all")
-        return {"message": "Item has been successfully claimed!"}
+        # Cache the claim status in Redis
+        redis_client.set(cache_key, "claimed", ex=3600)  # Set the claim status with an expiration time of 1 hour
+
+        return {"message": f"Listing {listing_id} successfully claimed by user {claimedUserID}"}
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"Error claiming item: {e}")
-        raise HTTPException(status_code=500, detail="Error claiming item")
+        print(f"Error claiming listing: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
 
 @router.post("/listings/sell")

@@ -392,3 +392,21 @@ def get_rejected_items_by_user(user_id: str, db: Session):
     """)
     result = db.execute(query, {"user_id": user_id})
     return result.fetchall()
+
+
+def get_user_role(db: Session, user_id: str):
+    try:
+        query = text("SELECT userIsAdmin FROM dbo.Users WHERE userID = :user_id")
+        result = db.execute(query, {"user_id": user_id}).fetchone()
+
+        if result is None:
+            raise Exception("User not found.")
+
+        user_is_admin = result[0]
+        if user_is_admin == 1:
+            return "admin"
+        else:
+            return "user"
+    except Exception as e:
+        print(f"Error fetching role for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
