@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import "./AdminPage.css"; // Reuse your admin styling
+import "./AdminPage.css"; //Reuse
 
 export default function ViewAllUsers() {
   const [users, setUsers] = useState([]);
@@ -17,7 +17,19 @@ export default function ViewAllUsers() {
       console.error("Failed to fetch users:", error);
     }
   };
+  const handleMakeAdmin = async (userID) => {
+    try {
+      const formData = new FormData();
+      formData.append("userID", userID);
 
+      const response = await axios.post("http://127.0.0.1:8000/api/users/make-admin", formData);
+      alert(response.data.message);
+      fetchUsers();
+    } catch (error) {
+      console.error("Failed to promote user:", error);
+      alert("Error promoting user to admin.");
+    }
+  };
   return (
     <div className="claimer-container">
       <div className="hero-section">
@@ -52,9 +64,9 @@ export default function ViewAllUsers() {
                 <td>
                   <button
                     className="btn btn-danger"
-                    onClick={() => handleDeactivate(user.userID)}
+                    onClick={() => handleMakeAdmin(user.userID)}
                   >
-                  Deactivate
+                  Make Admin
                   </button>
                 </td>
               </tr>

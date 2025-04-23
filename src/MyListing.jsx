@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import "./MyListing.css";
 
@@ -7,6 +7,10 @@ export default function MyListings() {
   const [claimedItems, setClaimedItems] = useState([]);
   const [activeTab, setActiveTab] = useState("listed");
   const userID = localStorage.getItem("userID");
+  const normalizedUserID = userID?.trim().toLowerCase();
+  const currentItems = useMemo(() => {
+    return activeTab === "listed" ? listedItems : claimedItems;
+  }, [activeTab, listedItems, claimedItems]);
 
   useEffect(() => {
     fetchListedItems();
@@ -16,7 +20,9 @@ export default function MyListings() {
   const fetchListedItems = async () => {
     try {
       const response = await axios.get("http://127.0.0.1:8000/api/listings");
-      const userListings = response.data.filter(item => item.listUserID === userID);
+      const userListings = response.data.filter(item => 
+        item.listUserID?.trim().toLowerCase() === normalizedUserID
+      );
       setListedItems(userListings);
     } catch (error) {
       console.error("Error fetching listed items:", error);
@@ -25,16 +31,14 @@ export default function MyListings() {
 
   const fetchClaimedItems = async () => {
     try {
-        const [claimedResponse, soldResponse] = await Promise.all([
-            axios.get(`http://127.0.0.1:8000/api/claimed/${userID}`),
-            axios.get(`http://127.0.0.1:8000/api/sold/${userID}`)
-          ]);
-        const combinedItems = [...claimedResponse.data, ...soldResponse.data];
-      setClaimedItems(combinedItems);
+      const response = await axios.get(`http://127.0.0.1:8000/api/claimed/${userID}`);
+      console.log("Claimed Items Response:", response.data);
+      setClaimedItems(response.data);
     } catch (error) {
       console.error("Error fetching claimed items:", error);
     }
   };
+  
 
   return (
     <div className="background-image">
@@ -80,10 +84,10 @@ export default function MyListings() {
           <div key={item.listID} className="item-card">
             <h3>{item.listDescription}</h3>
             <p><strong>Category:</strong> {item.listCategory}</p>
-            <p><strong>Status:</strong> {item.isClaimed ? "Claimed" : "Unclaimed"}</p>
+            <p><strong>Status:</strong> {activeTab === "claimed" ? "Claimed" : (item.isClaimed ? "Claimed" : "Unclaimed")}</p>
           </div>
         ))}
-        {(activeTab === "listed" ? listedItems : claimedItems).length === 0 && (
+        {currentItems.length === 0 && (
           <p>No items to display.</p>
         )}
       </div>
