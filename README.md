@@ -18,9 +18,10 @@ This template will provide an easy set-up explination on how to get the backend 
  - Once inside of VS Code, youll need to navigate to the extensions tab on the left side, inside of that install Python and MSSQL
  - Once downloaded you should be able to pull the project from the Github to run the backend.
  - Inside the backend youll need to install a couple of things, to do this on the top of your screen there should be a terminal button, click terminal - new terminal
+ - once inside the terminal input cd backend, this will take you to the backend folders. After this youll prcoeed with installing your venv then running the project
  - # 1. Clone the project (if needed)
 git clone https://github.com/TheNestExchange.git
-cd your-project-folder
+
 
 # 2. Create & activate a virtual environment
 python -m venv venv
@@ -31,6 +32,7 @@ source venv/bin/activate   # (Mac/Linux)
 
 # 3. Install dependencies
 pip install -r requirements.txt
+If issues arrise with the dependiencies do pip freeze > requirements.txt then run the install command again. 
 
 # 4. Run the FastAPI server
 uvicorn main:app  --reload
