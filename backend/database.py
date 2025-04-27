@@ -393,6 +393,29 @@ def get_rejected_items_by_user(user_id: str, db: Session):
     result = db.execute(query, {"user_id": user_id})
     return result.fetchall()
 
+def get_all_rejected_items(db: Session):
+    try:
+        query = text("""
+            SELECT rejectedListID, rejectedUserID, rejectedReason, rejectedDate
+            FROM rejectedItems
+        """)
+        result = db.execute(query).fetchall()
+
+        rejected_listings = [
+            {
+                "rejectedListID": row.rejectedListID,
+                "rejectedUserID": row.rejectedUserID,
+                "rejectedReason": row.rejectedReason,
+                "rejectedDate": row.rejectedDate.strftime("%Y-%m-%d") if isinstance(row.rejectedDate, date) else row.rejectedDate,
+            }
+            for row in result
+        ]
+
+        return rejected_listings
+    except Exception as e:
+        print(f"Error fetching all rejected items: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching rejected listings")
+
 
 def get_user_role(db: Session, user_id: str):
     try:

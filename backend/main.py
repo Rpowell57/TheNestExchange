@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 from sqlalchemy import text
 from database import( get_db, newListing, get_all_listings, get_unclaimed_listings, get_all_users,
-make_admin, get_rejected_items_by_user, all_claimed_for_specific_user, all_sold_for_specific_user, get_user_role)
+make_admin, get_rejected_items_by_user, all_claimed_for_specific_user, all_sold_for_specific_user, get_user_role, get_all_rejected_items)
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
@@ -517,6 +517,16 @@ def get_rejected_items(user_id: str, db: Session = Depends(get_db)):
         }
         for item in items
     ]
+
+@router.get("/rejected-items")
+def get_rejected_items(db: Session = Depends(get_db)):
+    try:
+        rejected_items = get_all_rejected_items(db)
+        return {"rejected_items": rejected_items}
+    except Exception as e:
+       
+        raise HTTPException(status_code=500, detail="Error fetching rejected listings")
+
 
 app.include_router(router, prefix="/api")
 
