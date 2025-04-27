@@ -42,17 +42,19 @@ function Marketplace() {
       const formData = new FormData();
       formData.append("claimedUserID", userID);
       formData.append("claimedReview", "Pending");
-      formData.append("claimedRating", "5");
+      formData.append("claimedRating", 5);
 
       const response = await axios.post(`http://127.0.0.1:8000/api/claim/${listID}`, formData);
 
-      if (response.data.message === "Item has been successfully claimed!") {
+      if (response.data.message?.toLowerCase().includes("successfully claimed")) {
         alert("Item claimed successfully!");
+        window.dispatchEvent(new CustomEvent("notify", { detail: `You claimed listing #${listID}` }));
         setClaimedListings((prev) => [...prev, listID]);
-        setSelectedListing(null); // Close modal after claim
+        setSelectedListing(null);
       } else {
         alert("Failed to claim item.");
       }
+      
     } catch (error) {
       console.error("Error during claim:", error);
       alert("Something went wrong while claiming the item.");
@@ -139,7 +141,6 @@ function Marketplace() {
             />
 
             {claimError && <p style={{ color: "red" }}>{claimError}</p>}
-
             <button
               className="claimer-button"
               onClick={() => handleClaim(selectedListing.listID)}
@@ -151,6 +152,7 @@ function Marketplace() {
                 ? "Claiming..."
                 : "Claim Listing"}
             </button>
+            
             <button className="btn btn-secondary" onClick={() => setSelectedListing(null)}>
               Close
             </button>
