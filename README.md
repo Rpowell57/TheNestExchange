@@ -10,7 +10,7 @@ Currently, two official plugins are available:
 
 # Access Document
 [[Download The Nest Exchange Access Document](https://github.com/Rpowell57/TheNestExchange/blob/cf60feda879459f7e09a42c30f89b1dc18789bb5/TheNestExchange_AcessDoc.docx)]
-
+Download the raw file to view the document. 
 
 
 # BACKEND PYTHON
