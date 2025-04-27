@@ -9,7 +9,8 @@ Currently, two official plugins are available:
 
 
 # Access Document
-see documentation [here](TheNestExchange_AcessDoc.docx/README.md)
+[Download The Nest Exchange Access Document](https://raw.githubusercontent.com/RPowell57/thenestexchangeui/main/TheNestExchange_AccessDoc.docx)
+
 
 
 # BACKEND PYTHON
