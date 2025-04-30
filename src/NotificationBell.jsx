@@ -1,32 +1,49 @@
 import { useState, useEffect } from "react";
-import { Bell } from "lucide-react"; // or use an icon library you prefer
-import "./NotificationBell.css"; // create your own styles
+import { Bell } from "lucide-react";
+import axios from "axios";
+import "./NotificationBell.css";
 
 export default function NotificationBell({ userId }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [fetched, setFetched] = useState(false);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || fetched) return;
 
-    const ws = new WebSocket(`ws://localhost:8000/ws/notifications/${userId}`);
+    const fetchNotifications = async () => {
+      try {
+        const response = await axios.get(
+          `http://127.0.0.1:8000/api/listings/rejected/${userId}`
+        );
 
-    ws.onmessage = (event) => {
-      const message = event.data;
-      setNotifications((prev) => [...prev, { message, read: false }]);
-      setUnreadCount((prev) => prev + 1);
-      // Optional: Play sound
-      new Audio("/notification.mp3").play();
+        if (Array.isArray(response.data)) {
+          const newNotifications = response.data.map((item) => ({
+            listID: item.listID,
+            reason: item.reason,
+            read: false,
+          }));
+
+          setNotifications(newNotifications);
+          setUnreadCount(newNotifications.length);
+          new Audio("/notification.mp3").play();
+          setFetched(true);
+        }
+      } catch (error) {
+        console.error("Error fetching notifications", error);
+      }
     };
 
-    return () => ws.close();
-  }, [userId]);
+    fetchNotifications();
+  }, [userId, fetched]);
 
   const toggleDropdown = () => {
     setShowDropdown(!showDropdown);
     setUnreadCount(0);
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, read: true }))
+    );
   };
 
   return (
@@ -45,9 +62,10 @@ export default function NotificationBell({ userId }) {
               .slice()
               .reverse()
               .map((n, i) => (
-                <p key={i} className={n.read ? "read" : "unread"}>
-                  {n.message}
-                </p>
+                <div key={i} className={n.read ? "read" : "unread"}>
+                  <p><strong>Listing ID:</strong> {n.listID}
+                  <strong>  Reason:</strong> {n.reason}</p>
+                </div>
               ))
           )}
         </div>

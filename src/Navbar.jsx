@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import ksuLogo from "./assets/ksulogo.png";
 import "./Navbar.css";
-import NotificationListener from "./NotificationListener.jsx";
 import NotificationBell from './NotificationBell';
 
 export default function NavBar() {
@@ -39,7 +38,7 @@ export default function NavBar() {
 
     return (
         <>
-            {isAuthenticated && <NotificationListener userId={userName} />}
+            {isAuthenticated}
 
             <nav className="navbar">
                 <div className="container">
