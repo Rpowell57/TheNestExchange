@@ -28,17 +28,17 @@ This template will provide an easy set-up explination on how to get the backend 
 git clone https://github.com/TheNestExchange.git
 
 
-# 2. Create & activate a virtual environment
+# 2. Create a virtual environment
 python -m venv venv
-
-venv\Scripts\Activate   # (Windows)
-# OR
-source venv/bin/activate   # (Mac/Linux)
 
 # 3. Install dependencies
 pip install -r requirements.txt
 If issues arrise with the dependiencies do pip freeze > requirements.txt then run the install command again. 
 
 # 4. Run the FastAPI server
+cd backend
+venv\Scripts\activate # (Windows)
+# OR
+source venv/bin/activate   # (Mac/Linux)
 uvicorn main:app  --reload
 
