@@ -6,6 +6,7 @@ function ListerPage() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    category: "",
     condition: "",
   });
 
@@ -31,7 +32,6 @@ function ListerPage() {
     const files = Array.from(event.target.files).slice(0, 2);
     setImageFiles(files);
   };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
     setUploadError("");
@@ -56,7 +56,7 @@ function ListerPage() {
       const formDataToSend = new FormData();
       formDataToSend.append("listUserID", userID);
       formDataToSend.append("listDate", new Date().toISOString().split("T")[0]);
-      formDataToSend.append("listCategory", "1"); // You can replace with dynamic later
+      formDataToSend.append("listCategory", formData.category);
       formDataToSend.append("listDescription", formData.description);
       formDataToSend.append("listClaimDescription", formData.title);
       formDataToSend.append("isClaimed", "0");
@@ -72,7 +72,7 @@ function ListerPage() {
       console.log("Listing submitted:", response.data);
       alert("Listing submitted for admin approval!");
       // Optional: reset form
-      setFormData({ title: "", description: "", condition: "" });
+      setFormData({ title: "", description: "",category: "" , condition: "" });
       setImageFiles([]);
     } catch (error) {
       console.error("Full error:", error.response?.data);
@@ -95,7 +95,7 @@ function ListerPage() {
           <h1>Create Listing</h1>
           <p>Create a listing to be claimed by users.</p>
             <div className="input-wrapper">
-                          <div className="input-field">
+            <div className="input-field">
             <input
               type="text"
               placeholder="Listing Title..."
@@ -115,8 +115,22 @@ function ListerPage() {
               className="input"
               required
             />
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className="select-category"
+              required
+            >
+              <option value="">Select Category</option>
+              <option value="1">Electronics</option>
+              <option value="2">Clothing</option>
+              <option value="3">Books</option>
+              <option value="4">Home</option>
+              <option value="5">Other</option>
+            </select>
 
-                          </div>
+            </div>
             <div className="radio-inputs" style={{ justifyContent: "center" }}>
                 <p>Describe Item Condition:</p>
 

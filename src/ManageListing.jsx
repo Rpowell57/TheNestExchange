@@ -25,8 +25,8 @@ export default function ManageListing() {
 
   const fetchRejectedListings = async () => {
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/api/listings/rejected/${userID}`);
-      setRejectedListings(response.data);
+      const response = await axios.get("http://127.0.0.1:8000/api/rejected-items");
+      setRejectedListings(response.data.rejected_items || []);
     } catch (error) {
       console.error("Failed to fetch rejected listings:", error);
     }
@@ -82,9 +82,10 @@ export default function ManageListing() {
             <div key={listing.listID || listing.id} className="listing-card">
               {activeTab === "Rejected" ? (
                 <>
-                  <h3>Listing ID: {listing.listID}</h3>
-                  <p><strong>Rejection Reason:</strong> {listing.reason}</p>
-                  <p><strong>Date:</strong> {listing.date}</p>
+                  <h3>Listing ID: {listing.rejectedListID}</h3>
+                  <p><strong>Rejection Reason:</strong> {listing.rejectedReason}</p>
+                  <p><strong>Date:</strong> {listing.rejectedDate}</p>
+                  <p><strong>Submitted By:</strong> {listing.rejectedUserID}</p>
                 </>
               ) : (
                 <>

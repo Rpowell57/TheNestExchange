@@ -27,7 +27,7 @@ export default function NotificationBell({ userId }) {
 
           setNotifications(newNotifications);
           setUnreadCount(newNotifications.length);
-          new Audio("/notification.mp3").play();
+          //new Audio("/notification.mp3").play();
           setFetched(true);
         }
       } catch (error) {

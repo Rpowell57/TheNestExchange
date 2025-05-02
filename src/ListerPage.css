@@ -238,3 +238,24 @@
     font-size: 18px;
     color: #555;
 }
+.select-category {
+    width: 100%;
+    padding: 10px 15px;
+    font-size: 1rem;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    background-color: #fff;
+    color: #333;
+    transition: border-color 0.3s ease;
+}
+
+.select-category:focus {
+    border-color: #E2C116;
+    outline: none;
+}
+
+.select-category option {
+    padding: 10px;
+    font-size: 1rem;
+}
+

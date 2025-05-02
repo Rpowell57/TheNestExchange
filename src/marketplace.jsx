@@ -83,7 +83,17 @@ function Marketplace() {
     });
     setFilteredListings(filtered);
   };
-
+  const getCategoryName = (categoryId) => {
+    const categoryMap = {
+      1: "Electronics",
+      2: "Clothing",
+      3: "Books",
+      4: "Home",
+      5: "Other",
+    };
+    return categoryMap[categoryId] || "Unknown";
+  };
+  
   return (
     <div className="marketplace-container">
       <div className="marketplace-header">
@@ -122,7 +132,7 @@ function Marketplace() {
               <div className="marketplace-info">
                 <h3>{listing.listClaimDescription}</h3>
                 <p>{listing.listDescription}</p>
-                <p><strong>Category:</strong> {listing.listCategory}</p>
+                <p><strong>Category:</strong> {getCategoryName(listing.listCategory)}</p>
               </div>
             </div>
           ))
